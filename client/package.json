@@ -6,17 +6,20 @@
   "scripts": {
     "dev": "bun --hot src/index.ts",
     "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
+    "generate-api": "swagger-typescript-api generate -p http://localhost:5265/swagger/v1/swagger.json -o src/api -n Api.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "typecheck": "bun check"
   },
   "dependencies": {
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "react-router": "^8.5.1"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest"
+    "swagger-typescript-api": "^13.14.0"
   },
   "peerDependencies": {
     "typescript": "^7"
