@@ -6,6 +6,20 @@ namespace Service;
 public record PeriodBalance(HolidayAccount Account, int EarningYear, decimal Accrued, decimal Movements)
 {
     public decimal Remaining => Accrued + Movements;
+    public DateOnly UsableFrom => HolidayPeriods.UsageStart(Account, EarningYear);
+    public DateOnly ExpiresOn => HolidayPeriods.UsageEnd(Account, EarningYear);
+
+    public ExpiryStatus StatusOn(DateOnly date, int warningDays = 60)
+    {
+        if (date < UsableFrom) return ExpiryStatus.NotYetUsable;
+        if (date > ExpiresOn) return ExpiryStatus.Expired;
+        if (ExpiresOn.DayNumber - date.DayNumber <= warningDays) return ExpiryStatus.ExpiringSoon;
+        return ExpiryStatus.Active;
+    }
+
+    /// <summary>Der er timer tilbage, og de udløber snart eller er udløbet: skal afholdes, overføres eller udbetales.</summary>
+    public bool NeedsAction(DateOnly date, int warningDays = 60) =>
+        Remaining > 0 && StatusOn(date, warningDays) is ExpiryStatus.ExpiringSoon or ExpiryStatus.Expired;
 }
 
 /// <summary>
