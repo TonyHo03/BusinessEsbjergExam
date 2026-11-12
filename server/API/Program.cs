@@ -15,6 +15,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 builder.Services.AddLinqToDBContext<AppDb>((sp, options) =>
     options.UsePostgreSQL(builder.Configuration.GetConnectionString("Db")!));
 builder.Services.AddScoped<HolidayService>();
+builder.Services.AddScoped<RequestService>();
 
 var app = builder.Build();
 
