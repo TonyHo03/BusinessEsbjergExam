@@ -1,24 +1,38 @@
-import { APITester } from "./APITester";
+import { BrowserRouter, Route, Routes } from "react-router";
+import { Layout } from "./components/Layout";
+import { DashboardPage } from "./pages/DashboardPage";
+import { RequestHolidayPage } from "./pages/RequestHolidayPage";
+import { MyRequestsPage } from "./pages/MyRequestsPage";
+import { ApprovalsPage } from "./pages/ApprovalsPage";
+import { EmployeeOverviewPage } from "./pages/EmployeeOverviewPage";
+import { ParametersPage } from "./pages/ParametersPage";
+import { UsersPage } from "./pages/UsersPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import "./index.css";
 
-import logo from "./logo.svg";
-import reactLogo from "./react.svg";
-
 export function App() {
-  return (
-    <div className="app">
-      <div className="logo-container">
-        <img src={logo} alt="Bun Logo" className="logo bun-logo" />
-        <img src={reactLogo} alt="React Logo" className="logo react-logo" />
-      </div>
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route element={<Layout />}>
+                    {/* Medarbejder */}
+                    <Route index element={<DashboardPage />} />
+                    <Route path="requests" element={<MyRequestsPage />} />
+                    <Route path="requests/new" element={<RequestHolidayPage />} />
 
-      <h1>Bun + React</h1>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
-      <APITester />
-    </div>
-  );
+                    {/* Bogholderi */}
+                    <Route path="approvals" element={<ApprovalsPage />} />
+                    <Route path="employees" element={<EmployeeOverviewPage />} />
+
+                    {/* Admin */}
+                    <Route path="admin/parameters" element={<ParametersPage />} />
+                    <Route path="admin/users" element={<UsersPage />} />
+
+                    <Route path="*" element={<NotFoundPage />} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;
