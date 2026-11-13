@@ -9,7 +9,7 @@ namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(UserService userService, JwtTokenService jwt, IConfiguration config) : ControllerBase
+public class AuthController(EmployeeService employeeService, JwtTokenService jwt, IConfiguration config) : ControllerBase
 {
     const string CookieName = "access_token";
     readonly bool _cookieSecure = config.GetValue("Jwt:CookieSecure", true);
@@ -20,7 +20,7 @@ public class AuthController(UserService userService, JwtTokenService jwt, IConfi
         if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrEmpty(req.Password))
             return BadRequest(new { error = "Username and password are required" });
 
-        var user = userService.Login(req.Email, req.Password);
+        var user = employeeService.Login(req.Email, req.Password);
         if (user is null) return Unauthorized();
 
         var (token, expires) = jwt.Create(user);

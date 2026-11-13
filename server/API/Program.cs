@@ -1,3 +1,12 @@
+using System.Text;
+using System.Text.Json.Serialization;
+using API;
+using Infra;
+using LinqToDB;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Service;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
@@ -13,7 +22,9 @@ var issuer = config["Jwt:Issuer"]!;
 var audience = config["Jwt:Audience"]!;
 builder.Services.AddScoped(_ => new AppDb(new DataOptions().UsePostgreSQL(connectionString)));
 
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<RequestService>();
+builder.Services.AddScoped<HolidayService>();
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddSingleton<PasswordHasher>();
 builder.Services.AddSingleton(new JwtTokenService(issuer: issuer, audience: audience, key: jwtKey));
