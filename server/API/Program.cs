@@ -1,20 +1,9 @@
-using System.Text;
-using System.Text.Json.Serialization;
-using API;
-using Infra;
-using LinqToDB;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using NSwag;
-using NSwag.Generation.Processors.Security;
-using Service;
-
 var builder = WebApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
 
 const string CookieName = "access_token";
- 
+
 var connectionString = config.GetConnectionString("Default")
                        ?? throw new InvalidOperationException("ConnectionStrings:Default is missing");
 var jwtKey = config["Jwt:Key"];
@@ -82,3 +71,5 @@ using (var scope = app.Services.CreateScope())
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { } // så integrationstests kan starte API'et
