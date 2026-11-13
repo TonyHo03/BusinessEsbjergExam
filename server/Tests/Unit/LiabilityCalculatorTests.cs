@@ -1,7 +1,6 @@
 using Service.Accounting;
-using Xunit;
 
-namespace HolidayPlanner.UnitTests.Accounting;
+namespace Tests.Unit;
 
 public class LiabilityCalculatorTests
 {

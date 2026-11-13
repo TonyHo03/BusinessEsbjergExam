@@ -1,3 +1,4 @@
+using Infra.Entities;
 using LinqToDB;
 using LinqToDB.Data;
 
@@ -11,4 +12,5 @@ public class AppDb(DataOptions options) : DataConnection(options)
     public ITable<DayOff> DaysOff => this.GetTable<DayOff>();
     public ITable<HolidayRequest> HolidayRequests => this.GetTable<HolidayRequest>();
     public ITable<LedgerEntry> LedgerEntries => this.GetTable<LedgerEntry>();
+    public ITable<Request> Requests => this.GetTable<Request>();
 }

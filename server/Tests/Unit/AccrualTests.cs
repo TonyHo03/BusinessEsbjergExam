@@ -1,4 +1,5 @@
 using Infra;
+using Infra.Entities;
 using Service;
 using Xunit;
 

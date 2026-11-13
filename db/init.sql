@@ -7,6 +7,7 @@ CREATE TABLE employee (
                           start_date date NOT NULL,
                           end_date   date,
                           created_at timestamptz NOT NULL DEFAULT now()
+                          identity_subject text UNIQUE
 );
 
 CREATE TABLE rule_parameter (
