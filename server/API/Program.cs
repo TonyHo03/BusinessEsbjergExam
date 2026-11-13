@@ -1,10 +1,21 @@
+using Infra;
+using LinqToDB;
+using LinqToDB.AspNet;
+using System.Text.Json.Serialization;
+using Service;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApiDocument();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));builder.Services.AddOpenApiDocument();
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(builder.Configuration["ClientUrl"] ?? "http://localhost:3000")
         .AllowAnyHeader().AllowAnyMethod()));
+
+builder.Services.AddLinqToDBContext<AppDb>((sp, options) =>
+    options.UsePostgreSQL(builder.Configuration.GetConnectionString("Db")!));
+builder.Services.AddScoped<HolidayService>();
+builder.Services.AddScoped<RequestService>();
 
 var app = builder.Build();
 
