@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --hot src/index.ts",
-    "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
+    "build": "bun run build.ts",
     "generate-api": "swagger-typescript-api generate -p http://localhost:5265/swagger/v1/swagger.json -o src/api -n Api.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "typecheck": "bun check"

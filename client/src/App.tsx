@@ -7,8 +7,8 @@ import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { EmployeeOverviewPage } from "./pages/EmployeeOverviewPage";
 import { ParametersPage } from "./pages/ParametersPage";
 import { UsersPage } from "./pages/UsersPage";
+import { HelpPage } from "./pages/HelpPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import "./index.css";
 
 export function App() {
     return (
@@ -27,6 +27,9 @@ export function App() {
                     {/* Admin */}
                     <Route path="admin/parameters" element={<ParametersPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
+
+                    {/* Fælles */}
+                    <Route path="help" element={<HelpPage />} />
 
                     <Route path="*" element={<NotFoundPage />} />
                 </Route>
