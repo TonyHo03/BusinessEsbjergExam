@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Infra;
-using Infra.Entities;
 using LinqToDB;
 using Service;
 
@@ -17,15 +16,20 @@ public class DatabaseSeeder(AppDb db, PasswordHasher hasher)
   
     public void CreateTables()
     {
-        db.CreateTable<User>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<Employee>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<HolidayRequest>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<DayOff>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<LedgerEntry>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<WorkSchedule>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<RuleParameter>(tableOptions: TableOptions.CreateIfNotExists);
     }
  
     public void SeedUsers()
     {
-        if (db.Users.Any())
+        if (db.Employees.Any())
             return;
  
-        db.Insert(new User
+        db.Insert(new Employee
         {
             Id = Guid.NewGuid(),
             Name = "admin",

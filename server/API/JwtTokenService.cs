@@ -12,14 +12,14 @@ public class JwtTokenService(string key, string issuer, string audience)
 {
     public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(30);
 
-    public (string Token, DateTime Expires) Create(UserDto user)
+    public (string Token, DateTime Expires) Create(EmployeeDto employee)
     {
         var expires = DateTime.UtcNow.Add(Lifetime);
         var descriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity([
-                new Claim("sub", user.Id.ToString()),
-                new Claim("role", user.Role.ToString())
+                new Claim("sub", employee.Id.ToString()),
+                new Claim("role", employee.Role.ToString())
             ]),
             Issuer = issuer,
             Audience = audience,
