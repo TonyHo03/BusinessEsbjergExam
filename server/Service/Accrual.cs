@@ -1,5 +1,4 @@
 using Infra;
-using Infra.Entities;
 
 namespace Service;
 

@@ -11,122 +11,36 @@ namespace API.Controllers;
 
 [ApiController]
 [Route("api/approvals")]
-[Authorize(Policy = AccessPolicies.AccountingRights)]
-public class ApprovalsController(
-    ApprovalService service,
-    IEmployeeDirectory employeeDirectory) : ControllerBase
+[Authorize]
+public class ApprovalsController(ApprovalService service) : ControllerBase
 {
-    [HttpGet("api/approvals/pending")]
-    public async Task<ActionResult<IReadOnlyList<PendingRequestDto>>> GetPending(
-        CancellationToken ct)
+    private Guid UserId => Guid.Parse(User.FindFirstValue("sub")!);
+
+    [HttpGet("pending"), Authorize(Policy = AccessPolicies.AccountingRights)]
+    public async Task<IReadOnlyList<PendingRequestDto>> GetPending(CancellationToken ct) =>
+        await service.ListPendingAsync(UserId, ct);
+
+    [HttpPost("{id:guid}/approve"), Authorize(Policy = AccessPolicies.AccountingRights)]
+    public Task<ActionResult<DecisionResponseDto>> Approve(Guid id, CancellationToken ct) =>
+        Decide(id, RequestAction.Approve, null, ct);
+
+    [HttpPost("{id:guid}/reject"), Authorize(Policy = AccessPolicies.AccountingRights)]
+    public Task<ActionResult<DecisionResponseDto>> Reject(Guid id, RejectRequestDto body, CancellationToken ct) =>
+        Decide(id, RequestAction.Reject, body.Reason, ct);
+
+    [HttpPost("{id:guid}/cancel")]
+    public Task<ActionResult<DecisionResponseDto>> Cancel(Guid id, CancellationToken ct) =>
+        Decide(id, RequestAction.Cancel, null, ct);
+
+    private async Task<ActionResult<DecisionResponseDto>> Decide(
+        Guid id, RequestAction action, string? reason, CancellationToken ct)
     {
-        if (!TryGetIdentity(out var actorUserId, out var identitySubject))
-            return Unauthorized();
-
-        var employeeId =
-            await employeeDirectory.FindEmployeeIdAsync(identitySubject, ct);
-
-        var requests = await service.ListPendingAsync(employeeId, ct);
-        return Ok(requests);
-    }
-
-    [HttpPost("{requestId:guid}/approve")]
-    public async Task<IActionResult> Approve(
-        Guid requestId,
-        CancellationToken ct)
-    {
-        if (!TryGetIdentity(out var actorUserId, out var identitySubject))
-            return Unauthorized();
-
-        var employeeId =
-            await employeeDirectory.FindEmployeeIdAsync(identitySubject, ct);
-
-        var result = await service.DecideAsync(
-            requestId,
-            actorUserId,
-            RequestAction.Approve,
-            reason: null,
-            actorEmployeeId: employeeId,
-            actorHasAccountingRights: AccountingRoles.Has(User),
-            ct);
-
-        return ToActionResult(requestId, result);
-    }
-
-    [HttpPost("{requestId:guid}/reject")]
-    public async Task<IActionResult> Reject(
-        Guid requestId,
-        [FromBody] RejectRequestDto body,
-        CancellationToken ct)
-    {
-        if (!TryGetIdentity(out var actorUserId, out var identitySubject))
-            return Unauthorized();
-
-        var employeeId =
-            await employeeDirectory.FindEmployeeIdAsync(identitySubject, ct);
-
-        var result = await service.DecideAsync(
-            requestId,
-            actorUserId,
-            RequestAction.Reject,
-            body.Reason,
-            employeeId,
-            AccountingRoles.Has(User),
-            ct);
-
-        return ToActionResult(requestId, result);
-    }
-
-    private bool TryGetIdentity(
-        out Guid actorUserId,
-        out string identitySubject)
-    {
-        identitySubject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
-
-        return Guid.TryParse(identitySubject, out actorUserId)
-            && !string.IsNullOrWhiteSpace(identitySubject);
-    }
-
-    private IActionResult ToActionResult(Guid requestId, DecisionResult result)
-    {
+        var result = await service.DecideAsync(id, action, reason, UserId, AccountingRoles.Has(User), ct);
         return result.Outcome switch
         {
-            DecisionOutcome.Done when result.NewStatus is { } status =>
-                Ok(new DecisionResponseDto(requestId, status)),
-
-            DecisionOutcome.NotFound =>
-                NotFound(),
-
-            DecisionOutcome.NotAllowed =>
-                Conflict(new { error = result.Error ?? "This decision is not allowed." }),
-
-            DecisionOutcome.Conflict =>
-                Conflict(new { error = result.Error ?? "The request changed. Refresh and try again." }),
-
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
+            DecisionOutcome.Done => new DecisionResponseDto(id, result.NewStatus!.Value),
+            DecisionOutcome.NotFound => NotFound(),
+            _ => Problem(result.Error, statusCode: StatusCodes.Status409Conflict) 
         };
-    }
-    [HttpPost("{requestId:guid}/cancel")]
-    [Authorize(Roles = "Employee,Accountant,Admin")]
-    public async Task<IActionResult> Cancel(
-        Guid requestId,
-        CancellationToken ct)
-    {
-        if (!TryGetIdentity(out var actorUserId, out var identitySubject))
-            return Unauthorized();
-
-        var employeeId =
-            await employeeDirectory.FindEmployeeIdAsync(identitySubject, ct);
-
-        var result = await service.DecideAsync(
-            requestId,
-            actorUserId,
-            RequestAction.Cancel,
-            reason: null,
-            actorEmployeeId: employeeId,
-            actorHasAccountingRights: AccountingRoles.Has(User),
-            ct);
-
-        return ToActionResult(requestId, result);
     }
 }

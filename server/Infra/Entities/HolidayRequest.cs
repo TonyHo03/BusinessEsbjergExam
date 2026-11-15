@@ -18,6 +18,7 @@ public class HolidayRequest
     [Column("account")] public HolidayAccount Account { get; set; }
     [Column("start_date")] public DateOnly StartDate { get; set; }
     [Column("end_date")] public DateOnly EndDate { get; set; }
+    [Column("working_days")] public int WorkingDays { get; set; }
     [Column("hours")] public decimal Hours { get; set; }
     [Column("status")] public RequestStatus Status { get; set; }
     [Column("comment")] public string? Comment { get; set; }

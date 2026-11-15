@@ -3,7 +3,7 @@ using LinqToDB.Mapping;
 
 namespace Infra;
 
-[Table("employees")]
+[Table("employee")]
 public class Employee
 {
     [PrimaryKey, Column("id")] public Guid Id { get; set; }

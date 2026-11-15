@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Infra;
-using Infra.Entities;
 
 namespace Service;
 

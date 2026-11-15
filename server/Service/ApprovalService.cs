@@ -41,10 +41,9 @@ public class ApprovalService(
 
     public async Task<DecisionResult> DecideAsync(
         Guid requestId,
-        Guid actorUserId,
         RequestAction action,
         string? reason,
-        Guid? actorEmployeeId,
+        Guid actorId,
         bool actorHasAccountingRights,
         CancellationToken ct)
     {
@@ -53,7 +52,7 @@ public class ApprovalService(
             return new(DecisionOutcome.NotFound);
 
         var context = new TransitionContext(
-            ActorIsOwner: actorEmployeeId == request.EmployeeId,
+            ActorIsOwner: actorId == request.EmployeeId,
             ActorHasAccountingRights: actorHasAccountingRights,
             StartDate: request.StartDate,
             Today: DateOnly.FromDateTime(time.GetLocalNow().DateTime),
@@ -71,7 +70,7 @@ public class ApprovalService(
         {
             Id = Guid.NewGuid(),
             RequestId = requestId,
-            ActorId = actorUserId,
+            ActorId = actorId,
             Action = action,
             FromStatus = request.Status,
             ToStatus = transition.NewStatus,

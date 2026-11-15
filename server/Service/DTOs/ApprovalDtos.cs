@@ -15,7 +15,7 @@ public record PendingRequestDto(
     DateOnly StartDate,
     DateOnly EndDate,
     int WorkingDays,
-    decimal WorkingHours,
+    decimal Hours,
     HolidayAccount Account,
     DateTimeOffset SubmittedAt,
     string? Note,

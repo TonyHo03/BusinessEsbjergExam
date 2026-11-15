@@ -3,6 +3,7 @@ using Service.Security;
 
 namespace API.Security;
 
+[Authorize]
 public static class AccessPolicies
 {
     public const string AccountingRights = nameof(AccountingRights);

@@ -4,11 +4,13 @@ CREATE TABLE employee (
                           id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                           name       text NOT NULL,
                           email      text NOT NULL UNIQUE,
+                          password_hash text NOT NULL,
+                          role       text NOT NULL,
                           start_date date NOT NULL,
                           end_date   date,
-                          created_at timestamptz NOT NULL DEFAULT now()
-                          identity_subject text UNIQUE
-);
+                          created_at timestamptz NOT NULL DEFAULT now(),
+                          );
+
 
 CREATE TABLE rule_parameter (
                                 id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,6 +47,7 @@ CREATE TABLE holiday_request (
                                  account          text NOT NULL CHECK (account IN ('Weeks1to5', 'Week6')),
                                  start_date       date NOT NULL,
                                  end_date         date NOT NULL,
+                                 working_days     integer NOT NULL,
                                  hours            numeric(6,2) NOT NULL,
                                  status           text NOT NULL CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')),
                                  comment          text,

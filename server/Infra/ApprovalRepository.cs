@@ -7,10 +7,10 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
 {
     public async Task<IReadOnlyList<HolidayRequestSnapshot>> ListPendingAsync(CancellationToken ct)
     {
-        var query = from request in db.Requests
+        var query = from request in db.HolidayRequests
             join employee in db.Employees on request.EmployeeId equals employee.Id
             where request.Status == RequestStatus.Pending
-            orderby request.SubmittedAt
+            orderby request.CreatedAt
             select new HolidayRequestSnapshot(
                 request.Id,
                 request.EmployeeId, employee.Name,
@@ -20,8 +20,8 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
                 request.WorkingDays,
                 request.Hours,
                 request.Account,
-                request.SubmittedAt,
-                request.Note
+                request.CreatedAt,
+                request.Comment
             );
         return await query.ToListAsync(ct);
     }
@@ -29,7 +29,7 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
 
 public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken ct)
 {
-    var query = from request in db.Requests
+    var query = from request in db.HolidayRequests
         join employee in db.Employees on request.EmployeeId equals employee.Id
         where request.Id == id
         select new HolidayRequestSnapshot(
@@ -41,8 +41,8 @@ public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken c
             request.WorkingDays,
             request.Hours,
             request.Account,
-            request.SubmittedAt,
-            request.Note
+            request.CreatedAt,
+            request.Comment
         );
     return await  query.FirstOrDefaultAsync(ct);
 }
@@ -52,8 +52,11 @@ public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken c
     {
         await using var transaction = db.BeginTransaction();
 
-        var updated = await db.Requests.Where(request => request.Id == requestId && request.Status == expected)
-            .Set(request => request.Status, next).UpdateAsync(ct);
+        var updated = await db.HolidayRequests.Where(request => request.Id == requestId && request.Status == expected)
+            .Set(request => request.Status, next).Set(request => request.RejectionReason,
+                next == RequestStatus.Rejected ? audit.Reason : null)
+            .Set(request => request.DecidedBy, audit.ActorId)
+            .Set(request => request.DecidedAt, audit.OccurredAt).UpdateAsync(ct);
 
         if (updated != 1)
         {

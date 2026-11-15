@@ -1,5 +1,4 @@
 using Infra;
-using Infra.Entities;
 using Service;
 using Xunit;
 
@@ -20,7 +19,13 @@ public class AccrualTests
     ]);
 
     private static Employee Employee(DateOnly start, DateOnly? end = null) =>
-        new() { Id = Guid.NewGuid(), StartDate = start, EndDate = end };
+        new()
+        {
+            Id = Guid.NewGuid(),
+            StartDate = start,
+            EndDate = end,
+            Role = Roles.Employee
+        };
 
     private static decimal Accrued(HolidayAccount account, int year, Employee employee, DateOnly asOf,
         WorkSchedule? schedule = null, ParameterResolver? parameters = null) =>

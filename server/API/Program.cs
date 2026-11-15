@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using API;
+using API.Security;
 using Infra;
 using LinqToDB;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,12 +27,16 @@ builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<RequestService>();
 builder.Services.AddScoped<HolidayService>();
 builder.Services.AddScoped<DatabaseSeeder>();
+builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
+builder.Services.AddScoped<ApprovalService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<PasswordHasher>();
 builder.Services.AddSingleton(new JwtTokenService(issuer: issuer, audience: audience, key: jwtKey));
 builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApiDocument();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<MyExceptionHandler>();
+builder.Services.AddAuthorization(AccessPolicies.Register);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -59,8 +64,6 @@ builder.Services
             }
         };
     });
-
-builder.Services.AddAuthorization();
 
 
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:3000"];
