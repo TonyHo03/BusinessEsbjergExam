@@ -11,8 +11,10 @@ public enum LedgerEntryType
 }
 
 /// <summary>
-/// Én bevægelse på en ferie-konto. Hours er med fortegn:
+/// Én bevægelse på en ferie-konto. Days og Hours er med fortegn:
 /// negativ trækker fra saldoen (fx afholdt ferie), positiv lægger til (fx en rettelse).
+/// Days er saldoens egentlige enhed – ferie er en ret til dage. Hours er de timer,
+/// bevægelsen svarede til på datoen, og gemmes som dokumentation (fx til lønsystemet).
 /// Optjening gemmes ikke her, den beregnes.
 /// </summary>
 [Table("ledger_entry")]
@@ -23,6 +25,7 @@ public class LedgerEntry
     [Column("account")] public HolidayAccount Account { get; set; }
     [Column("earning_year")] public int EarningYear { get; set; }
     [Column("type")] public LedgerEntryType Type { get; set; }
+    [Column("days")] public decimal Days { get; set; }
     [Column("hours")] public decimal Hours { get; set; }
     [Column("entry_date")] public DateOnly EntryDate { get; set; }
     [Column("request_id")] public Guid? RequestId { get; set; }
