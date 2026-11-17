@@ -52,7 +52,7 @@ public static class Accrual
             var daysInMonth = monthEnd.Day;
             var share = (decimal)daysEmployed / daysInMonth;
 
-            var weeklyHours = WeeklyHours(ScheduleResolver.For(schedules, firstDay));
+            var weeklyHours = ScheduleResolver.For(schedules, firstDay).WeeklyHours;
             total += MonthlyHours(account, weeklyHours, parameters, monthStart) * share;
         }
 
@@ -68,10 +68,7 @@ public static class Accrual
             parameters.GetDecimal(ParameterKeys.Week6HoursPerMonth, month) * weeklyHours / FullTimeWeeklyHours,
         _ => throw new ArgumentOutOfRangeException(nameof(account))
     };
-
-    private static decimal WeeklyHours(WorkSchedule s) =>
-        s.Mon + s.Tue + s.Wed + s.Thu + s.Fri + s.Sat + s.Sun;
-
+    
     private static DateOnly Max(DateOnly a, DateOnly b) => a > b ? a : b;
     private static DateOnly Min(DateOnly a, DateOnly b) => a < b ? a : b;
 }

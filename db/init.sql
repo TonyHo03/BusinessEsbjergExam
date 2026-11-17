@@ -21,14 +21,19 @@ CREATE TABLE work_schedule (
                                id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                                employee_id    uuid NOT NULL REFERENCES employee(id),
                                effective_from date NOT NULL,
-                               mon numeric(4,2) NOT NULL,
-                               tue numeric(4,2) NOT NULL,
-                               wed numeric(4,2) NOT NULL,
-                               thu numeric(4,2) NOT NULL,
-                               fri numeric(4,2) NOT NULL,
-                               sat numeric(4,2) NOT NULL DEFAULT 0,
-                               sun numeric(4,2) NOT NULL DEFAULT 0,
-                               UNIQUE (employee_id, effective_from)
+                               effective_to   date,                  -- NULL = indtil videre
+                               mon_start time, mon_end time,         -- NULL = ikke en arbejdsdag
+                               tue_start time, tue_end time,
+                               wed_start time, wed_end time,
+                               thu_start time, thu_end time,
+                               fri_start time, fri_end time,
+                               UNIQUE (employee_id, effective_from),
+                               CHECK (effective_to IS NULL OR effective_to >= effective_from),
+                               CHECK ((mon_start IS NULL) = (mon_end IS NULL) AND (mon_end IS NULL OR mon_end > mon_start)),
+                               CHECK ((tue_start IS NULL) = (tue_end IS NULL) AND (tue_end IS NULL OR tue_end > tue_start)),
+                               CHECK ((wed_start IS NULL) = (wed_end IS NULL) AND (wed_end IS NULL OR wed_end > wed_start)),
+                               CHECK ((thu_start IS NULL) = (thu_end IS NULL) AND (thu_end IS NULL OR thu_end > thu_start)),
+                               CHECK ((fri_start IS NULL) = (fri_end IS NULL) AND (fri_end IS NULL OR fri_end > fri_start))
 );
 
 CREATE TABLE day_off (
@@ -72,12 +77,7 @@ INSERT INTO rule_parameter (key, value, effective_from) VALUES
                                                             ('week6.hours_per_month',      '3.083', '2020-01-01'),
                                                             ('main_holiday.days',          '15',    '2020-09-01'),
                                                             ('notice.main_holiday_months', '3',     '2020-09-01'),
-                                                            ('notice.other_months',        '1',     '2020-09-01'),
-                                                            ('payout.weeks1to5_percent',   '12.5',  '2020-09-01'),
-                                                            ('payout.week6_percent',       '2.5',   '2020-01-01'),
-                                                            ('supplement.base_percent',    '1',     '2020-09-01'),
-                                                            ('supplement.raised_percent',  '0.95',  '2020-09-01'),
-                                                            ('supplement.raised_percent',  '1.48',  '2024-05-01');
+                                                            ('notice.other_months',        '1',     '2020-09-01');
 
 -- ===== Helligdage og firmafridage 2026–2027 =====
 
@@ -112,8 +112,9 @@ INSERT INTO day_off (date, name, is_company) VALUES
 INSERT INTO employee (id, name, email, start_date) VALUES
     ('11111111-1111-1111-1111-111111111111', 'Mette Jensen', 'mette@businessesbjerg.dk', '2025-09-01');
 
-INSERT INTO work_schedule (employee_id, effective_from, mon, tue, wed, thu, fri) VALUES
-    ('11111111-1111-1111-1111-111111111111', '2025-09-01', 7.5, 7.5, 7.5, 7.5, 7);
+INSERT INTO work_schedule (employee_id, effective_from, mon_start, mon_end, tue_start, tue_end, wed_start, wed_end, thu_start, thu_end, fri_start, fri_end) VALUES
+    ('11111111-1111-1111-1111-111111111111', '2025-09-01',
+     '08:00', '15:30', '08:00', '15:30', '08:00', '15:30', '08:00', '15:30', '08:00', '15:00');
 
 -- Godkendt sommerferie 6.7–24.7.2026: 15 dage, 111 t fra optjeningsår 2025
 INSERT INTO holiday_request (id, employee_id, account, start_date, end_date, hours, status, comment) VALUES

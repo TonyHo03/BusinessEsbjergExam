@@ -6,12 +6,8 @@ namespace Tests.Unit;
 
 public class RequestCalculatorTests
 {
-    // Business Esbjergs standardskema: Man–Tor 7,5 t, Fre 7 t
-    private static readonly WorkSchedule FullTime = new()
-    {
-        EffectiveFrom = new DateOnly(2020, 1, 1),
-        Mon = 7.5m, Tue = 7.5m, Wed = 7.5m, Thu = 7.5m, Fri = 7m
-    };
+    // Business Esbjergs standardskema: Man–Tor 08:00–15:30 (7,5 t), Fre 08:00–15:00 (7 t)
+    private static readonly WorkSchedule FullTime = TestSchedules.FullTime();
 
     private static readonly IReadOnlySet<DateOnly> NoDaysOff = new HashSet<DateOnly>();
 
@@ -82,11 +78,8 @@ public class RequestCalculatorTests
     [Fact]
     public void Part_time_employee_uses_own_schedule()
     {
-        var partTime = new WorkSchedule
-        {
-            EffectiveFrom = new DateOnly(2020, 1, 1),
-            Mon = 6m, Tue = 6m, Wed = 0m, Thu = 6m, Fri = 0m
-        };
+        // Arbejder 09:00–15:00 man, tir og tor. Fri onsdag og fredag
+        var partTime = TestSchedules.Create(TestSchedules.LongAgo, "09:00-15:00", "09:00-15:00", null, "09:00-15:00", null);
 
         var result = Calc(new DateOnly(2026, 11, 16), new DateOnly(2026, 11, 20), null, partTime);
 
@@ -97,11 +90,7 @@ public class RequestCalculatorTests
     [Fact]
     public void Uses_the_schedule_that_applies_on_each_day()
     {
-        var newSchedule = new WorkSchedule
-        {
-            EffectiveFrom = new DateOnly(2026, 11, 19), // fra torsdag: kun 5 t om dagen
-            Mon = 5m, Tue = 5m, Wed = 5m, Thu = 5m, Fri = 5m
-        };
+        var newSchedule = TestSchedules.SameEveryDay("09:00-14:00", new DateOnly(2026, 11, 19)); // fra torsdag: kun 5 t om dagen
 
         // Man–Ons på gammelt skema (3 × 7,5) + Tor–Fre på nyt (2 × 5)
         var result = Calc(new DateOnly(2026, 11, 16), new DateOnly(2026, 11, 20), null, FullTime, newSchedule);
@@ -119,7 +108,7 @@ public class RequestCalculatorTests
     [Fact]
     public void Missing_schedule_is_rejected()
     {
-        var future = new WorkSchedule { EffectiveFrom = new DateOnly(2030, 1, 1), Mon = 7.5m };
+        var future = TestSchedules.FullTime(new DateOnly(2030, 1, 1));
 
         Assert.Throws<InvalidOperationException>(() =>
             Calc(new DateOnly(2026, 11, 16), new DateOnly(2026, 11, 16), null, future));
