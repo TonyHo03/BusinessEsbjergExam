@@ -20,7 +20,7 @@ public class BalanceOutlookTests
     // Sommerferie 2026: 111 t fra uge 1–5, optjeningsår 2025
     private static readonly LedgerEntry[] SummerHoliday =
     [
-        new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2025, Type = LedgerEntryType.Usage, Hours = -111m }
+        new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2025, Type = LedgerEntryType.Usage, Days = -15m, Hours = -111m }
     ];
 
     private static BalanceOutlook Outlook(HolidayAccount account, DateOnly start, decimal reserved = 0m,

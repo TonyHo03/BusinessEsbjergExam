@@ -10,10 +10,9 @@ public class BalancesTests
 
     private static readonly Employee Mette = new() { Id = Guid.NewGuid(), StartDate = new DateOnly(2025, 9, 1) };
 
-    private static readonly WorkSchedule[] FullTime =
-    [
-        TestSchedules.FullTime()
-    ];
+    // Saldi føres i dage. For en fuldtidsansat er en feriedag 7,4 t (37 / 5),
+    // så testene omregner til timer for at kunne sammenligne med tallene fra skitsen
+    private const decimal FullTimeDay = 7.4m;
 
     private static readonly ParameterResolver Parameters = new(
     [
@@ -21,14 +20,14 @@ public class BalancesTests
         new RuleParameter { Key = ParameterKeys.Week6HoursPerMonth, Value = "3.083", EffectiveFrom = new DateOnly(2020, 1, 1) }
     ]);
 
-    // Sommerferie 2026: 111 t fra uge 1–5, optjeningsår 2025
+    // Sommerferie 2026: 15 dage (111 t) fra uge 1–5, optjeningsår 2025
     private static readonly LedgerEntry[] SummerHoliday =
     [
-        new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2025, Type = LedgerEntryType.Usage, Hours = -111m }
+        new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2025, Type = LedgerEntryType.Usage, Days = -15m, Hours = -111m }
     ];
 
     private static IReadOnlyList<PeriodBalance> MetteBalances() =>
-        Balances.For(Mette, FullTime, Parameters, SummerHoliday, Today);
+        Balances.For(Mette, Parameters, SummerHoliday, Today);
 
     private static PeriodBalance Find(IEnumerable<PeriodBalance> balances, HolidayAccount account, int year) =>
         balances.Single(b => b.Account == account && b.EarningYear == year);
@@ -46,7 +45,8 @@ public class BalancesTests
     {
         var b = Find(MetteBalances(), HolidayAccount.Weeks1To5, 2025);
 
-        Assert.Equal(73.70m, Math.Round(b.Remaining, 2)); // 184,70 − 111
+        Assert.Equal(9.96m, Math.Round(b.Remaining, 2));                // 24,96 − 15 dage
+        Assert.Equal(73.70m, Math.Round(b.Remaining * FullTimeDay, 2)); // 184,70 − 111 t
         Assert.Equal(new DateOnly(2026, 12, 31), b.ExpiresOn);
         Assert.Equal(ExpiryStatus.ExpiringSoon, b.StatusOn(Today));
         Assert.True(b.NeedsAction(Today));
@@ -57,7 +57,7 @@ public class BalancesTests
     {
         var b = Find(MetteBalances(), HolidayAccount.Weeks1To5, 2026);
 
-        Assert.Equal(30.78m, Math.Round(b.Remaining, 2));
+        Assert.Equal(30.78m, Math.Round(b.Remaining * FullTimeDay, 2));
         Assert.Equal(new DateOnly(2027, 12, 31), b.ExpiresOn);
         Assert.Equal(ExpiryStatus.Active, b.StatusOn(Today));
     }
@@ -67,7 +67,7 @@ public class BalancesTests
     {
         var b = Find(MetteBalances(), HolidayAccount.Week6, 2025);
 
-        Assert.Equal(12.33m, Math.Round(b.Remaining, 2)); // ansat sep–dec 2025: 4 × 3,083
+        Assert.Equal(12.33m, Math.Round(b.Remaining * FullTimeDay, 2)); // ansat sep–dec 2025: 4 × 3,083 t
         Assert.Equal(new DateOnly(2027, 4, 30), b.ExpiresOn);
         Assert.Equal(ExpiryStatus.Active, b.StatusOn(Today));
     }
@@ -77,7 +77,7 @@ public class BalancesTests
     {
         var b = Find(MetteBalances(), HolidayAccount.Week6, 2026);
 
-        Assert.Equal(30.83m, Math.Round(b.Remaining, 2)); // jan–okt: 10 × 3,083
+        Assert.Equal(30.83m, Math.Round(b.Remaining * FullTimeDay, 2)); // jan–okt: 10 × 3,083 t
         Assert.Equal(new DateOnly(2027, 5, 1), b.UsableFrom);
         Assert.Equal(ExpiryStatus.NotYetUsable, b.StatusOn(Today));
     }
@@ -87,8 +87,8 @@ public class BalancesTests
     {
         var balances = MetteBalances();
 
-        Assert.Equal(104.49m, Math.Round(Balances.AvailableOn(balances, HolidayAccount.Weeks1To5, Today), 2)); // 73,70 + 30,78
-        Assert.Equal(12.33m, Math.Round(Balances.AvailableOn(balances, HolidayAccount.Week6, Today), 2));
+        Assert.Equal(104.49m, Math.Round(Balances.AvailableOn(balances, HolidayAccount.Weeks1To5, Today) * FullTimeDay, 2)); // 73,70 + 30,78
+        Assert.Equal(12.33m, Math.Round(Balances.AvailableOn(balances, HolidayAccount.Week6, Today) * FullTimeDay, 2));
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class BalancesTests
     {
         var oldEmployee = new Employee { Id = Guid.NewGuid(), StartDate = new DateOnly(2024, 9, 1) };
 
-        var balances = Balances.For(oldEmployee, FullTime, Parameters, [], Today);
+        var balances = Balances.For(oldEmployee, Parameters, [], Today);
         var b = Find(balances, HolidayAccount.Weeks1To5, 2024); // udløb 31.12.2025
 
         Assert.Equal(ExpiryStatus.Expired, b.StatusOn(Today));
@@ -109,10 +109,10 @@ public class BalancesTests
         var oldEmployee = new Employee { Id = Guid.NewGuid(), StartDate = new DateOnly(2024, 9, 1) };
         LedgerEntry[] allUsed =
         [
-            new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2024, Type = LedgerEntryType.Usage, Hours = -184.704m }
+            new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2024, Type = LedgerEntryType.Usage, Days = -24.96m }
         ];
 
-        var balances = Balances.For(oldEmployee, FullTime, Parameters, allUsed, Today);
+        var balances = Balances.For(oldEmployee, Parameters, allUsed, Today);
 
         Assert.DoesNotContain(balances, b => b.Account == HolidayAccount.Weeks1To5 && b.EarningYear == 2024);
     }
@@ -120,7 +120,7 @@ public class BalancesTests
     [Fact]
     public void No_action_needed_when_nothing_is_left()
     {
-        var b = new PeriodBalance(HolidayAccount.Weeks1To5, 2025, 185m, -185m);
+        var b = new PeriodBalance(HolidayAccount.Weeks1To5, 2025, 25m, -25m);
 
         Assert.Equal(ExpiryStatus.ExpiringSoon, b.StatusOn(Today));
         Assert.False(b.NeedsAction(Today));

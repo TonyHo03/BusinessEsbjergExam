@@ -13,7 +13,7 @@ public enum ExpiryStatus
 }
 
 /// <summary>
-/// Saldoen set fra en ansøgnings første feriedag.
+/// Saldoen set fra en ansøgnings første feriedag, i timer efter daglængden den dag.
 /// AvailableAtStart: timer der kan bruges den dag (minus ventende ansøgninger).
 /// DebtLimit: hvor mange timer saldoen må gå i minus (1 uge efter medarbejderens skema, 0 for 6. ferieuge).
 /// YearEnd / AvailableAtYearEnd: det, der dækker ansøgningen set fra den 31. august (ældre perioders rest
@@ -23,12 +23,13 @@ public record BalanceOutlook(decimal AvailableAtStart, decimal DebtLimit, DateOn
 
 /// <summary>
 /// Samler optjening og bevægelser til saldi pr. konto og optjeningsperiode.
+/// Saldi føres i dage og omregnes til timer med daglængden på datoen.
 /// </summary>
 public static class Balances
 {
+    /// <summary>Saldi i dage pr. konto og optjeningsperiode på datoen.</summary>
     public static IReadOnlyList<PeriodBalance> For(
         Employee employee,
-        IReadOnlyList<WorkSchedule> schedules,
         ParameterResolver parameters,
         IReadOnlyList<LedgerEntry> entries,
         DateOnly asOf)
@@ -45,7 +46,7 @@ public static class Balances
                 var balance = new PeriodBalance(
                     account,
                     year,
-                    Accrual.Accrued(account, year, employee, schedules, parameters, asOf),
+                    Accrual.Accrued(account, year, employee, parameters, asOf),
                     Ledger.Movements(entries, account, year));
 
                 if (balance.Accrued == 0 && balance.Movements == 0)
@@ -61,15 +62,16 @@ public static class Balances
         return result;
     }
 
-    /// <summary>Timer der kan bruges på datoen på én konto.</summary>
+    /// <summary>Dage der kan bruges på datoen på én konto.</summary>
     public static decimal AvailableOn(IEnumerable<PeriodBalance> balances, HolidayAccount account, DateOnly date) =>
         balances
             .Where(b => b.Account == account && HolidayPeriods.IsUsable(account, b.EarningYear, date))
             .Sum(b => b.Remaining);
 
     /// <summary>
-    /// Beregner saldoen på ansøgningens startdato og den efterfølgende 31. august.
+    /// Beregner saldoen på ansøgningens startdato og den efterfølgende 31. august, i timer.
     /// Optjening frem til datoen tæller med, så en ferie længere ude kan bruge flere timer.
+    /// Dagene omregnes med daglængden på startdatoen, så et skemaskift før ferien er taget med.
     /// </summary>
     public static BalanceOutlook Outlook(
         Employee employee,
@@ -80,14 +82,16 @@ public static class Balances
         DateOnly start,
         decimal reservedHours)
     {
-        var balancesAtStart = For(employee, schedules, parameters, entries, start);
-        var atStart = AvailableOn(balancesAtStart, account, start) - reservedHours;
+        var dayLength = ScheduleResolver.DayLength(schedules, start);
+
+        var balancesAtStart = For(employee, parameters, entries, start);
+        var atStart = AvailableOn(balancesAtStart, account, start) * dayLength - reservedHours;
 
         // Feriegæld gælder kun uge 1–5. 6. ferieuge kan ikke bruges på forskud
         if (account == HolidayAccount.Week6)
             return new BalanceOutlook(atStart, 0m, start, atStart);
 
-        var debtLimit = ScheduleResolver.For(schedules, start).WeeklyHours; // 1 uge
+        var debtLimit = 5m * dayLength; // 1 uge
         var currentYear = HolidayPeriods.EarningYearFor(account, start);
         var yearEnd = HolidayPeriods.EarningEnd(account, currentYear); // 31. august
 
@@ -96,10 +100,10 @@ public static class Balances
         var olderAtStart = balancesAtStart
             .Where(b => b.Account == account && b.EarningYear < currentYear && HolidayPeriods.IsUsable(account, b.EarningYear, start))
             .Sum(b => b.Remaining);
-        var currentAtYearEnd = For(employee, schedules, parameters, entries, yearEnd)
+        var currentAtYearEnd = For(employee, parameters, entries, yearEnd)
             .Where(b => b.Account == account && b.EarningYear == currentYear)
             .Sum(b => b.Remaining);
-        var atYearEnd = olderAtStart + currentAtYearEnd - reservedHours;
+        var atYearEnd = (olderAtStart + currentAtYearEnd) * dayLength - reservedHours;
 
         return new BalanceOutlook(atStart, debtLimit, yearEnd, atYearEnd);
     }

@@ -65,7 +65,8 @@ CREATE TABLE ledger_entry (
                               account      text NOT NULL CHECK (account IN ('Weeks1to5', 'Week6')),
                               earning_year int  NOT NULL,
                               type         text NOT NULL CHECK (type IN ('Usage', 'Payout', 'Expiry', 'Adjustment')),
-                              hours        numeric(7,3) NOT NULL,
+                              days         numeric(8,4) NOT NULL,  -- saldoens enhed: ferie er en ret til dage
+                              hours        numeric(7,3) NOT NULL,  -- de timer det svarede til på datoen
                               entry_date   date NOT NULL,
                               request_id   uuid REFERENCES holiday_request(id)
 );
@@ -121,6 +122,6 @@ INSERT INTO holiday_request (id, employee_id, account, start_date, end_date, hou
     ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
      'Weeks1to5', '2026-07-06', '2026-07-24', 111, 'Approved', 'Sommerferie');
 
-INSERT INTO ledger_entry (employee_id, account, earning_year, type, hours, entry_date, request_id) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Weeks1to5', 2025, 'Usage', -111, '2026-07-06',
+INSERT INTO ledger_entry (employee_id, account, earning_year, type, days, hours, entry_date, request_id) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'Weeks1to5', 2025, 'Usage', -15, -111, '2026-07-06',
      '22222222-2222-2222-2222-222222222222');

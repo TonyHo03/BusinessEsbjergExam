@@ -2,7 +2,10 @@ using Infra;
 
 namespace Service;
 
-/// <summary>Saldoen for én konto i én optjeningsperiode.</summary>
+/// <summary>
+/// Saldoen for én konto i én optjeningsperiode. Alle tal er i dage.
+/// Omregn til timer med daglængden på den dato, saldoen vises eller bruges.
+/// </summary>
 public record PeriodBalance(HolidayAccount Account, int EarningYear, decimal Accrued, decimal Movements)
 {
     public decimal Remaining => Accrued + Movements;
@@ -28,67 +31,84 @@ public record PeriodBalance(HolidayAccount Account, int EarningYear, decimal Acc
 /// </summary>
 public static class Ledger
 {
-    /// <summary>Summen af alle bevægelser på én konto i én optjeningsperiode.</summary>
+    /// <summary>Summen af alle bevægelser (i dage) på én konto i én optjeningsperiode.</summary>
     public static decimal Movements(IEnumerable<LedgerEntry> entries, HolidayAccount account, int earningYear) =>
         entries
             .Where(e => e.Account == account && e.EarningYear == earningYear)
-            .Sum(e => e.Hours);
+            .Sum(e => e.Days);
 
     /// <summary>
     /// Fordeler et forbrug af timer på de perioder, der kan bruges på datoen.
-    /// Den ældste periode bruges først, så timer med kortest levetid forsvinder først.
-    /// Er der ikke timer nok, lånes resten af den igangværende optjeningsperiode (feriegæld),
-    /// så længe den samlede saldo ikke kommer under -debtLimit.
+    /// Timerne omregnes til dage med daglængden på datoen (fx 7,4 t for fuld tid).
+    /// Den ældste periode bruges først, så dage med kortest levetid forsvinder først.
+    /// Er der ikke dage nok, lånes resten af den igangværende optjeningsperiode (feriegæld),
+    /// så længe den samlede saldo ikke kommer under -debtLimitDays.
     /// </summary>
     public static IReadOnlyList<LedgerEntry> AllocateUsage(
         Guid employeeId,
         HolidayAccount account,
         decimal hours,
+        decimal dayLength,
         DateOnly date,
         IEnumerable<PeriodBalance> balances,
         Guid? requestId = null,
-        decimal debtLimit = 0m)
+        decimal debtLimitDays = 0m)
     {
         if (hours <= 0)
             throw new ArgumentException("Antal timer skal være større end 0.");
+        if (dayLength <= 0)
+            throw new ArgumentException("Daglængden skal være større end 0.");
+
+        var days = hours / dayLength;
 
         var usable = balances
             .Where(b => b.Account == account && HolidayPeriods.IsUsable(account, b.EarningYear, date))
             .OrderBy(b => b.EarningYear)
             .ToList();
 
-        if (usable.Sum(b => b.Remaining) - hours < -debtLimit)
-            throw new InvalidOperationException("Der er ikke timer nok på kontoen.");
+        if (usable.Sum(b => b.Remaining) - days < -debtLimitDays)
+            throw new InvalidOperationException("Der er ikke dage nok på kontoen.");
 
-        var entries = new List<LedgerEntry>();
-        var missing = hours;
+        // Dage pr. optjeningsår: ældste først, resten er feriegæld i det igangværende år
+        var portions = new List<(int Year, decimal Days)>();
+        var missing = days;
 
         foreach (var balance in usable.Where(b => b.Remaining > 0))
         {
             if (missing == 0) break;
 
             var take = Math.Min(missing, balance.Remaining);
-            entries.Add(Usage(employeeId, account, balance.EarningYear, take, date, requestId));
+            portions.Add((balance.EarningYear, take));
             missing -= take;
         }
 
-        // Resten er feriegæld: lånes af den periode, der optjenes nu
         if (missing > 0)
-            entries.Add(Usage(employeeId, account, HolidayPeriods.EarningYearFor(account, date), missing, date, requestId));
+            portions.Add((HolidayPeriods.EarningYearFor(account, date), missing));
+
+        // Timerne fordeles i samme forhold. Den sidste del får resten, så summen altid passer
+        var entries = new List<LedgerEntry>();
+        var hoursLeft = hours;
+
+        for (var i = 0; i < portions.Count; i++)
+        {
+            var (year, portionDays) = portions[i];
+            var portionHours = i == portions.Count - 1 ? hoursLeft : Math.Round(hours * portionDays / days, 2);
+            hoursLeft -= portionHours;
+
+            entries.Add(new LedgerEntry
+            {
+                Id = Guid.NewGuid(),
+                EmployeeId = employeeId,
+                Account = account,
+                EarningYear = year,
+                Type = LedgerEntryType.Usage,
+                Days = -portionDays,
+                Hours = -portionHours,
+                EntryDate = date,
+                RequestId = requestId
+            });
+        }
 
         return entries;
     }
-
-    private static LedgerEntry Usage(Guid employeeId, HolidayAccount account, int earningYear, decimal hours,
-        DateOnly date, Guid? requestId) => new()
-    {
-        Id = Guid.NewGuid(),
-        EmployeeId = employeeId,
-        Account = account,
-        EarningYear = earningYear,
-        Type = LedgerEntryType.Usage,
-        Hours = -hours,
-        EntryDate = date,
-        RequestId = requestId
-    };
 }
