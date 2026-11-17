@@ -8,10 +8,7 @@ public class RequestValidatorTests
 {
     private static readonly DateOnly Today = new(2026, 11, 10);
 
-    private static readonly WorkSchedule[] FullTime =
-    [
-        TestSchedules.FullTime()
-    ];
+    private static readonly WorkSchedule[] FullTime = [TestSchedules.FullTime()];
 
     private static readonly ParameterResolver Parameters = new(
     [
@@ -20,21 +17,19 @@ public class RequestValidatorTests
         new RuleParameter { Key = ParameterKeys.NoticeOtherMonths, Value = "1", EffectiveFrom = new DateOnly(2020, 1, 1) }
     ]);
 
-    // Mettes saldi 10.11.2026 (se BalancesTests)
-    private static readonly PeriodBalance[] MetteBalances =
-    [
-        new(HolidayAccount.Weeks1To5, 2025, 184.70m, -111m), // 73,70 t, udløber 31.12.2026
-        new(HolidayAccount.Weeks1To5, 2026, 30.78m, 0m),     // 30,78 t
-        new(HolidayAccount.Week6, 2025, 12.33m, 0m),         // 12,33 t, kan bruges nu
-        new(HolidayAccount.Week6, 2026, 30.83m, 0m)          // kan først bruges fra 1.5.2027
-    ];
+    /// <summary>
+    /// Saldoen set fra ansøgningens startdato. Standard er Mette: 104,49 t til rådighed,
+    /// må låne 1 uge (37 t) og har rigeligt den 31. august.
+    /// </summary>
+    private static BalanceOutlook Outlook(decimal available = 104.49m, decimal atYearEnd = 300m, decimal debtLimit = 37m) =>
+        new(available, debtLimit, new DateOnly(2027, 8, 31), atYearEnd);
 
     private static RequestCalculation Calc(DateOnly start, DateOnly end) =>
         RequestCalculator.Calculate(start, end, FullTime, new HashSet<DateOnly>());
 
     private static RequestValidation Validate(HolidayAccount account, DateOnly start, DateOnly end,
-        IReadOnlyList<PeriodBalance>? balances = null, decimal reserved = 0m, DateOnly? today = null) =>
-        RequestValidator.Validate(account, Calc(start, end), balances ?? MetteBalances, reserved, Parameters, today ?? Today);
+        BalanceOutlook? outlook = null, DateOnly? today = null) =>
+        RequestValidator.Validate(account, Calc(start, end), outlook ?? Outlook(), Parameters, today ?? Today);
 
     private static bool Has(RequestValidation v, IssueCode code) => v.Issues.Any(i => i.Code == code);
 
@@ -68,10 +63,8 @@ public class RequestValidatorTests
     public void Main_holiday_needs_three_months_notice()
     {
         // 15 arbejdsdage i juni 2027, ansøgt 1.4.2027: under 3 måneders varsel
-        var balances = new[] { new PeriodBalance(HolidayAccount.Weeks1To5, 2026, 185m, 0m) };
-
         var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2027, 6, 7), new DateOnly(2027, 6, 25),
-            balances, today: new DateOnly(2027, 4, 1));
+            Outlook(available: 185m), today: new DateOnly(2027, 4, 1));
 
         Assert.True(v.IsMainHoliday);
         Assert.True(Has(v, IssueCode.NotEnoughNotice));
@@ -80,49 +73,74 @@ public class RequestValidatorTests
     [Fact]
     public void Main_holiday_with_three_months_notice_is_valid()
     {
-        var balances = new[] { new PeriodBalance(HolidayAccount.Weeks1To5, 2026, 185m, 0m) };
-
         var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2027, 6, 7), new DateOnly(2027, 6, 25),
-            balances, today: new DateOnly(2027, 3, 1));
+            Outlook(available: 185m), today: new DateOnly(2027, 3, 1));
 
         Assert.True(v.IsMainHoliday);
         Assert.True(v.IsValid);
     }
 
     [Fact]
-    public void Not_enough_hours_is_rejected()
+    public void Holiday_debt_up_to_one_week_is_allowed_with_a_warning()
     {
-        // 3 uger = 111 t, men der er kun 104,49 t
-        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 14), new DateOnly(2027, 1, 1));
+        // 3 uger = 111 t. Har 80 t og må låne 37 t
+        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 14), new DateOnly(2027, 1, 1),
+            Outlook(available: 80m));
 
-        Assert.True(Has(v, IssueCode.InsufficientBalance));
-    }
-
-    [Fact]
-    public void Hours_in_pending_requests_are_reserved()
-    {
-        // 52 t ønskes, 104,49 t findes, men 60 t er allerede reserveret
-        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23), reserved: 60m);
-
-        Assert.True(Has(v, IssueCode.InsufficientBalance));
-    }
-
-    [Fact]
-    public void Week6_only_uses_week6_hours()
-    {
-        // 2 dage = 15 t på 6. ferieuge, men der er kun 12,33 t (uge 1–5 tæller ikke med)
-        var v = Validate(HolidayAccount.Week6, new DateOnly(2026, 12, 14), new DateOnly(2026, 12, 15));
-
-        Assert.True(Has(v, IssueCode.InsufficientBalance));
-    }
-
-    [Fact]
-    public void Week6_hours_count_once_they_become_usable()
-    {
-        // I maj 2027 kan 6. ferieuge fra 2026 bruges (30,83 t). 2 dage = 15 t
-        var v = Validate(HolidayAccount.Week6, new DateOnly(2027, 5, 10), new DateOnly(2027, 5, 11));
-
+        Assert.True(v.IsValid);
+        Assert.True(Has(v, IssueCode.UsesHolidayDebt));
         Assert.False(Has(v, IssueCode.InsufficientBalance));
+    }
+
+    [Fact]
+    public void More_than_one_week_of_holiday_debt_is_rejected()
+    {
+        // 3 uger = 111 t. Har 60 t + 37 t lån = 97 t
+        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 14), new DateOnly(2027, 1, 1),
+            Outlook(available: 60m));
+
+        Assert.False(v.IsValid);
+        Assert.True(Has(v, IssueCode.InsufficientBalance));
+    }
+
+    [Fact]
+    public void No_debt_warning_when_the_balance_covers_the_request()
+    {
+        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23),
+            Outlook(available: 52m)); // præcis nok
+
+        Assert.False(Has(v, IssueCode.UsesHolidayDebt));
+    }
+
+    [Fact]
+    public void Balance_must_not_be_negative_on_31_august()
+    {
+        // Juleferien koster 52 t, men den 31.8.2027 er der kun 40 t
+        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23),
+            Outlook(atYearEnd: 40m));
+
+        Assert.False(v.IsValid);
+        Assert.True(Has(v, IssueCode.NegativeOn31August));
+    }
+
+    [Fact]
+    public void Balance_of_exactly_zero_on_31_august_is_allowed()
+    {
+        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23),
+            Outlook(atYearEnd: 52m));
+
+        Assert.False(Has(v, IssueCode.NegativeOn31August));
+    }
+
+    [Fact]
+    public void Week6_has_no_holiday_debt()
+    {
+        // 2 dage = 15 t på 6. ferieuge, men der er kun 12,33 t og intet lån
+        var v = Validate(HolidayAccount.Week6, new DateOnly(2026, 12, 14), new DateOnly(2026, 12, 15),
+            new BalanceOutlook(12.33m, 0m, new DateOnly(2026, 12, 14), 12.33m));
+
+        Assert.True(Has(v, IssueCode.InsufficientBalance));
+        Assert.False(Has(v, IssueCode.NegativeOn31August));
     }
 
     [Fact]
@@ -154,8 +172,9 @@ public class RequestValidatorTests
     [Fact]
     public void All_problems_are_reported_at_once()
     {
-        // For kort varsel og for mange timer
-        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 11, 16), new DateOnly(2026, 12, 4));
+        // For kort varsel og for mange timer (3 uger = 111 t, har 60 + 37)
+        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 11, 16), new DateOnly(2026, 12, 4),
+            Outlook(available: 60m));
 
         Assert.True(Has(v, IssueCode.NotEnoughNotice));
         Assert.True(Has(v, IssueCode.InsufficientBalance));

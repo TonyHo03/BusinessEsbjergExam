@@ -13,6 +13,15 @@ public enum ExpiryStatus
 }
 
 /// <summary>
+/// Saldoen set fra en ansøgnings første feriedag.
+/// AvailableAtStart: timer der kan bruges den dag (minus ventende ansøgninger).
+/// DebtLimit: hvor mange timer saldoen må gå i minus (1 uge efter medarbejderens skema, 0 for 6. ferieuge).
+/// YearEnd / AvailableAtYearEnd: det, der dækker ansøgningen set fra den 31. august (ældre perioders rest
+/// plus hele den igangværende periode). Efter ansøgningen må det ikke være negativt.
+/// </summary>
+public record BalanceOutlook(decimal AvailableAtStart, decimal DebtLimit, DateOnly YearEnd, decimal AvailableAtYearEnd);
+
+/// <summary>
 /// Samler optjening og bevægelser til saldi pr. konto og optjeningsperiode.
 /// </summary>
 public static class Balances
@@ -57,4 +66,41 @@ public static class Balances
         balances
             .Where(b => b.Account == account && HolidayPeriods.IsUsable(account, b.EarningYear, date))
             .Sum(b => b.Remaining);
+
+    /// <summary>
+    /// Beregner saldoen på ansøgningens startdato og den efterfølgende 31. august.
+    /// Optjening frem til datoen tæller med, så en ferie længere ude kan bruge flere timer.
+    /// </summary>
+    public static BalanceOutlook Outlook(
+        Employee employee,
+        IReadOnlyList<WorkSchedule> schedules,
+        ParameterResolver parameters,
+        IReadOnlyList<LedgerEntry> entries,
+        HolidayAccount account,
+        DateOnly start,
+        decimal reservedHours)
+    {
+        var balancesAtStart = For(employee, schedules, parameters, entries, start);
+        var atStart = AvailableOn(balancesAtStart, account, start) - reservedHours;
+
+        // Feriegæld gælder kun uge 1–5. 6. ferieuge kan ikke bruges på forskud
+        if (account == HolidayAccount.Week6)
+            return new BalanceOutlook(atStart, 0m, start, atStart);
+
+        var debtLimit = ScheduleResolver.For(schedules, start).WeeklyHours; // 1 uge
+        var currentYear = HolidayPeriods.EarningYearFor(account, start);
+        var yearEnd = HolidayPeriods.EarningEnd(account, currentYear); // 31. august
+
+        // Ældre perioder bruges først. Resten lånes af den igangværende periode,
+        // som skal være 0 eller positiv den 31. august, når hele året er optjent
+        var olderAtStart = balancesAtStart
+            .Where(b => b.Account == account && b.EarningYear < currentYear && HolidayPeriods.IsUsable(account, b.EarningYear, start))
+            .Sum(b => b.Remaining);
+        var currentAtYearEnd = For(employee, schedules, parameters, entries, yearEnd)
+            .Where(b => b.Account == account && b.EarningYear == currentYear)
+            .Sum(b => b.Remaining);
+        var atYearEnd = olderAtStart + currentAtYearEnd - reservedHours;
+
+        return new BalanceOutlook(atStart, debtLimit, yearEnd, atYearEnd);
+    }
 }

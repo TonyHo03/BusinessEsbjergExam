@@ -117,4 +117,39 @@ public class LedgerTests
         Assert.Throws<ArgumentException>(() =>
             Ledger.AllocateUsage(EmployeeId, HolidayAccount.Weeks1To5, 0m, new DateOnly(2026, 11, 16), []));
     }
+    
+    [Fact]
+    public void Holiday_debt_is_borrowed_from_the_current_earning_year()
+    {
+        // 5 t tilbage i 2025. Ferien koster 20 t, så 15 t lånes af 2026/27
+        var balances = new[] { new PeriodBalance(HolidayAccount.Weeks1To5, 2025, 185m, -180m) };
+
+        var entries = Ledger.AllocateUsage(EmployeeId, HolidayAccount.Weeks1To5, 20m, new DateOnly(2026, 12, 1),
+            balances, debtLimit: 37m);
+
+        Assert.Equal(2, entries.Count);
+        Assert.Equal((2025, -5m), (entries[0].EarningYear, entries[0].Hours));
+        Assert.Equal((2026, -15m), (entries[1].EarningYear, entries[1].Hours));
+    }
+
+    [Fact]
+    public void More_debt_than_the_limit_is_rejected()
+    {
+        var balances = new[] { new PeriodBalance(HolidayAccount.Weeks1To5, 2025, 185m, -180m) }; // 5 t
+
+        Assert.Throws<InvalidOperationException>(() =>
+            Ledger.AllocateUsage(EmployeeId, HolidayAccount.Weeks1To5, 50m, new DateOnly(2026, 12, 1),
+                balances, debtLimit: 37m));
+    }
+
+    [Fact]
+    public void Existing_debt_counts_against_the_limit()
+    {
+        // Allerede 30 t i minus. 10 t mere ville give -40 t
+        var balances = new[] { new PeriodBalance(HolidayAccount.Weeks1To5, 2026, 0m, -30m) };
+
+        Assert.Throws<InvalidOperationException>(() =>
+            Ledger.AllocateUsage(EmployeeId, HolidayAccount.Weeks1To5, 10m, new DateOnly(2026, 12, 1),
+                balances, debtLimit: 37m));
+    }
 }

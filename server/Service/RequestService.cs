@@ -63,8 +63,8 @@ public class RequestService(AppDb db)
             .SumAsync(r => (decimal?)r.Hours) ?? 0m; // SUM giver NULL, når der ingen rækker er
 
         var calc = RequestCalculator.Calculate(input.StartDate, input.EndDate, schedules, daysOff.ToHashSet());
-        var balances = Balances.For(employee, schedules, parameters, entries, today);
-        var validation = RequestValidator.Validate(input.Account, calc, balances, reservedHours, parameters, today);
+        var outlook = Balances.Outlook(employee, schedules, parameters, entries, input.Account, input.StartDate, reservedHours);
+        var validation = RequestValidator.Validate(input.Account, calc, outlook, parameters, today);
 
         return new RequestPreview(
             calc.Days,
