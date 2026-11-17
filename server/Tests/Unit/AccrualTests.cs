@@ -6,12 +6,8 @@ namespace Tests.Unit;
 
 public class AccrualTests
 {
-    private static readonly WorkSchedule FullTime = new()
-    {
-        EffectiveFrom = new DateOnly(2020, 1, 1),
-        Mon = 7.5m, Tue = 7.5m, Wed = 7.5m, Thu = 7.5m, Fri = 7m // 37 t/uge
-    };
-
+    private static readonly WorkSchedule FullTime = TestSchedules.FullTime(); // 37 t/uge
+    
     private static readonly ParameterResolver Parameters = new(
     [
         new RuleParameter { Key = ParameterKeys.Weeks1To5DaysPerMonth, Value = "2.08", EffectiveFrom = new DateOnly(2020, 1, 1) },
@@ -76,11 +72,7 @@ public class AccrualTests
     [Fact]
     public void Part_time_earns_in_proportion_to_hours()
     {
-        var partTime = new WorkSchedule
-        {
-            EffectiveFrom = new DateOnly(2020, 1, 1),
-            Mon = 6m, Tue = 6m, Wed = 6m, Thu = 6m, Fri = 6m // 30 t/uge
-        };
+        var partTime = TestSchedules.SameEveryDay("09:00-15:00"); // 6 t/dag = 30 t/uge
 
         // Uge 1–5: 2,08 × 6 t = 12,48 t. 6. ferieuge: 3,083 × 30/37 = 2,50 t
         Assert.Equal(12.48m, Accrued(HolidayAccount.Weeks1To5, 2026, LongTimeEmployee, new DateOnly(2026, 9, 30), partTime));

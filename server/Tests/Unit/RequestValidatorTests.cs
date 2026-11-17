@@ -10,7 +10,7 @@ public class RequestValidatorTests
 
     private static readonly WorkSchedule[] FullTime =
     [
-        new() { EffectiveFrom = new DateOnly(2020, 1, 1), Mon = 7.5m, Tue = 7.5m, Wed = 7.5m, Thu = 7.5m, Fri = 7m }
+        TestSchedules.FullTime()
     ];
 
     private static readonly ParameterResolver Parameters = new(
