@@ -37,6 +37,8 @@ public static class Ledger
     /// <summary>
     /// Fordeler et forbrug af timer på de perioder, der kan bruges på datoen.
     /// Den ældste periode bruges først, så timer med kortest levetid forsvinder først.
+    /// Er der ikke timer nok, lånes resten af den igangværende optjeningsperiode (feriegæld),
+    /// så længe den samlede saldo ikke kommer under -debtLimit.
     /// </summary>
     public static IReadOnlyList<LedgerEntry> AllocateUsage(
         Guid employeeId,
@@ -44,43 +46,49 @@ public static class Ledger
         decimal hours,
         DateOnly date,
         IEnumerable<PeriodBalance> balances,
-        Guid? requestId = null)
+        Guid? requestId = null,
+        decimal debtLimit = 0m)
     {
         if (hours <= 0)
             throw new ArgumentException("Antal timer skal være større end 0.");
 
         var usable = balances
-            .Where(b => b.Account == account
-                        && b.Remaining > 0
-                        && HolidayPeriods.IsUsable(account, b.EarningYear, date))
+            .Where(b => b.Account == account && HolidayPeriods.IsUsable(account, b.EarningYear, date))
             .OrderBy(b => b.EarningYear)
             .ToList();
 
-        if (usable.Sum(b => b.Remaining) < hours)
+        if (usable.Sum(b => b.Remaining) - hours < -debtLimit)
             throw new InvalidOperationException("Der er ikke timer nok på kontoen.");
 
         var entries = new List<LedgerEntry>();
         var missing = hours;
 
-        foreach (var balance in usable)
+        foreach (var balance in usable.Where(b => b.Remaining > 0))
         {
             if (missing == 0) break;
 
             var take = Math.Min(missing, balance.Remaining);
-            entries.Add(new LedgerEntry
-            {
-                Id = Guid.NewGuid(),
-                EmployeeId = employeeId,
-                Account = account,
-                EarningYear = balance.EarningYear,
-                Type = LedgerEntryType.Usage,
-                Hours = -take,
-                EntryDate = date,
-                RequestId = requestId
-            });
+            entries.Add(Usage(employeeId, account, balance.EarningYear, take, date, requestId));
             missing -= take;
         }
 
+        // Resten er feriegæld: lånes af den periode, der optjenes nu
+        if (missing > 0)
+            entries.Add(Usage(employeeId, account, HolidayPeriods.EarningYearFor(account, date), missing, date, requestId));
+
         return entries;
     }
+
+    private static LedgerEntry Usage(Guid employeeId, HolidayAccount account, int earningYear, decimal hours,
+        DateOnly date, Guid? requestId) => new()
+    {
+        Id = Guid.NewGuid(),
+        EmployeeId = employeeId,
+        Account = account,
+        EarningYear = earningYear,
+        Type = LedgerEntryType.Usage,
+        Hours = -hours,
+        EntryDate = date,
+        RequestId = requestId
+    };
 }
