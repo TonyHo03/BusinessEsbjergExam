@@ -16,6 +16,7 @@ builder.Services.AddLinqToDBContext<AppDb>((sp, options) =>
     options.UsePostgreSQL(builder.Configuration.GetConnectionString("Db")!));
 builder.Services.AddScoped<HolidayService>();
 builder.Services.AddScoped<RequestService>();
+builder.Services.AddScoped<TeamHolidayService>();
 
 var app = builder.Build();
 
