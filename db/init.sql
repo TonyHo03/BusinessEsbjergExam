@@ -4,10 +4,13 @@ CREATE TABLE employee (
                           id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                           name       text NOT NULL,
                           email      text NOT NULL UNIQUE,
+                          password_hash text NOT NULL,
+                          role       text NOT NULL,
                           start_date date NOT NULL,
                           end_date   date,
                           created_at timestamptz NOT NULL DEFAULT now()
-);
+                          );
+
 
 CREATE TABLE rule_parameter (
                                 id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -49,6 +52,7 @@ CREATE TABLE holiday_request (
                                  account          text NOT NULL CHECK (account IN ('Weeks1to5', 'Week6')),
                                  start_date       date NOT NULL,
                                  end_date         date NOT NULL,
+                                 working_days     integer NOT NULL,
                                  hours            numeric(6,2) NOT NULL,
                                  status           text NOT NULL CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')),
                                  comment          text,
@@ -110,17 +114,17 @@ INSERT INTO day_off (date, name, is_company) VALUES
 
 -- ===== Testdata: Mette fra skitsen =====
 
-INSERT INTO employee (id, name, email, start_date) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Mette Jensen', 'mette@businessesbjerg.dk', '2025-09-01');
+INSERT INTO employee (id, name, email, password_hash, role, start_date) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'Mette Jensen', 'mette@businessesbjerg.dk', '', 'Employee', '2025-09-01');
 
 INSERT INTO work_schedule (employee_id, effective_from, mon_start, mon_end, tue_start, tue_end, wed_start, wed_end, thu_start, thu_end, fri_start, fri_end) VALUES
     ('11111111-1111-1111-1111-111111111111', '2025-09-01',
      '08:00', '15:30', '08:00', '15:30', '08:00', '15:30', '08:00', '15:30', '08:00', '15:00');
 
 -- Godkendt sommerferie 6.7–24.7.2026: 15 dage, 111 t fra optjeningsår 2025
-INSERT INTO holiday_request (id, employee_id, account, start_date, end_date, hours, status, comment) VALUES
+INSERT INTO holiday_request (id, employee_id, account, start_date, end_date, working_days, hours, status, comment) VALUES
     ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
-     'Weeks1to5', '2026-07-06', '2026-07-24', 111, 'Approved', 'Sommerferie');
+     'Weeks1to5', '2026-07-06', '2026-07-24', 15, 111, 'Approved', 'Sommerferie');
 
 INSERT INTO ledger_entry (employee_id, account, earning_year, type, days, hours, entry_date, request_id) VALUES
     ('11111111-1111-1111-1111-111111111111', 'Weeks1to5', 2025, 'Usage', -15, -111, '2026-07-06',

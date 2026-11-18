@@ -8,7 +8,14 @@ public class BalancesTests
 {
     private static readonly DateOnly Today = new(2026, 11, 10);
 
-    private static readonly Employee Mette = new() { Id = Guid.NewGuid(), StartDate = new DateOnly(2025, 9, 1) };
+    private static readonly Employee Mette = new()
+    {
+        Id = Guid.NewGuid(),
+        StartDate = new DateOnly(2025,
+            9,
+            1),
+        Role = Roles.Employee
+    };
 
     // Saldi føres i dage. For en fuldtidsansat er en feriedag 7,4 t (37 / 5),
     // så testene omregner til timer for at kunne sammenligne med tallene fra skitsen
@@ -94,7 +101,14 @@ public class BalancesTests
     [Fact]
     public void Expired_period_with_hours_left_is_shown_and_needs_action()
     {
-        var oldEmployee = new Employee { Id = Guid.NewGuid(), StartDate = new DateOnly(2024, 9, 1) };
+        var oldEmployee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            StartDate = new DateOnly(2024,
+                9,
+                1),
+            Role = Roles.Employee
+        };
 
         var balances = Balances.For(oldEmployee, Parameters, [], Today);
         var b = Find(balances, HolidayAccount.Weeks1To5, 2024); // udløb 31.12.2025
@@ -106,7 +120,14 @@ public class BalancesTests
     [Fact]
     public void Expired_period_with_nothing_left_is_hidden()
     {
-        var oldEmployee = new Employee { Id = Guid.NewGuid(), StartDate = new DateOnly(2024, 9, 1) };
+        var oldEmployee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            StartDate = new DateOnly(2024,
+                9,
+                1),
+            Role = Roles.Employee
+        };
         LedgerEntry[] allUsed =
         [
             new() { Account = HolidayAccount.Weeks1To5, EarningYear = 2024, Type = LedgerEntryType.Usage, Days = -24.96m }

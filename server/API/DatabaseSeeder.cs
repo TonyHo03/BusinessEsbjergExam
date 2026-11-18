@@ -22,6 +22,7 @@ public class DatabaseSeeder(AppDb db, PasswordHasher hasher)
         db.CreateTable<LedgerEntry>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<WorkSchedule>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<RuleParameter>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<ApprovalAudit>(tableOptions: TableOptions.CreateIfNotExists);
     }
  
     public void SeedUsers()

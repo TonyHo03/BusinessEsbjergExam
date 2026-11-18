@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using Service.Security;
-using Xunit;
 
-namespace HolidayPlanner.UnitTests.Approvals;
+namespace Tests.Unit;
 
 public class AccountingRolesTests
 {
@@ -19,4 +19,15 @@ public class AccountingRolesTests
     [InlineData(null)]
     public void Everyone_Else_DoesNot(string? role) =>
         Assert.False(AccountingRoles.Has(role));
+    
+    [Theory]
+    [InlineData("Accountant", true)]
+    [InlineData("Admin", true)]
+    [InlineData("Employee", false)]
+    public void SignedInUser_HasRightsOnlyThroughTheRoleClaim(string role, bool expected)
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, role)], "test"));
+
+        Assert.Equal(expected, AccountingRoles.Has(user));
+    }
 }
