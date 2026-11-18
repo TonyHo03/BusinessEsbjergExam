@@ -3,25 +3,29 @@ using Infra;
 namespace Service;
 
 /// <summary>
-/// Beregner hvor mange timer en medarbejder har optjent i én optjeningsperiode.
-/// Optjening gemmes ikke, den beregnes ud fra ansættelse, arbejdsskema og parametre.
+/// Beregner hvor mange feriedage en medarbejder har optjent i én optjeningsperiode.
+/// Optjening gemmes ikke, den beregnes ud fra ansættelse og parametre.
+///
+/// Saldoen føres i dage, fordi ferie er en ret til dage. Timerne regnes først ud, når
+/// saldoen vises eller bruges – med daglængden fra det skema, der gælder på datoen.
+/// Skifter en medarbejder skema, er antallet af dage derfor det samme, og timerne følger med.
 ///
 /// Regler:
 /// - En måned tæller først, når den er slut (eller ansættelsen er slut i den måned).
-/// - Uge 1–5: dage pr. måned × (ugentlige timer / 5).
-/// - 6. ferieuge: timer pr. måned × (ugentlige timer / 37).
+/// - Uge 1–5: dage pr. måned (2,08), uanset om man er på fuld tid eller deltid.
+/// - 6. ferieuge: timer pr. måned for en fuldtidsansat (3,083) omregnet til dage á 7,4 t.
 /// - Starter eller stopper man midt i en måned, optjener man for de kalenderdage, man var ansat.
-/// - Skema og parametre slås op på den måned, timerne optjenes i.
+/// - Parametre slås op på den måned, dagene optjenes i.
 /// </summary>
 public static class Accrual
 {
-    private const decimal FullTimeWeeklyHours = 37m;
+    /// <summary>En fuldtidsansat feriedag: 37 t / 5.</summary>
+    private const decimal FullTimeDayLength = 37m / 5m;
 
     public static decimal Accrued(
         HolidayAccount account,
         int earningYear,
         Employee employee,
-        IReadOnlyList<WorkSchedule> schedules,
         ParameterResolver parameters,
         DateOnly asOf)
     {
@@ -52,25 +56,20 @@ public static class Accrual
             var daysInMonth = monthEnd.Day;
             var share = (decimal)daysEmployed / daysInMonth;
 
-            var weeklyHours = WeeklyHours(ScheduleResolver.For(schedules, firstDay));
-            total += MonthlyHours(account, weeklyHours, parameters, monthStart) * share;
+            total += MonthlyDays(account, parameters, monthStart) * share;
         }
 
         return total;
     }
 
-    private static decimal MonthlyHours(HolidayAccount account, decimal weeklyHours,
-        ParameterResolver parameters, DateOnly month) => account switch
+    private static decimal MonthlyDays(HolidayAccount account, ParameterResolver parameters, DateOnly month) => account switch
     {
         HolidayAccount.Weeks1To5 =>
-            parameters.GetDecimal(ParameterKeys.Weeks1To5DaysPerMonth, month) * weeklyHours / 5m,
+            parameters.GetDecimal(ParameterKeys.Weeks1To5DaysPerMonth, month),
         HolidayAccount.Week6 =>
-            parameters.GetDecimal(ParameterKeys.Week6HoursPerMonth, month) * weeklyHours / FullTimeWeeklyHours,
+            parameters.GetDecimal(ParameterKeys.Week6HoursPerMonth, month) / FullTimeDayLength,
         _ => throw new ArgumentOutOfRangeException(nameof(account))
     };
-
-    private static decimal WeeklyHours(WorkSchedule s) =>
-        s.Mon + s.Tue + s.Wed + s.Thu + s.Fri + s.Sat + s.Sun;
 
     private static DateOnly Max(DateOnly a, DateOnly b) => a > b ? a : b;
     private static DateOnly Min(DateOnly a, DateOnly b) => a < b ? a : b;

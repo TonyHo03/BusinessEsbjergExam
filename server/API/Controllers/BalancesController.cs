@@ -7,12 +7,15 @@ namespace API.Controllers;
 [Route("api/employees/{employeeId:guid}/balances")]
 public class BalancesController(HolidayService holidays) : ControllerBase
 {
-    /// <summary>Saldi pr. konto og optjeningsperiode med udløbsdatoer.</summary>
+    /// <summary>
+    /// Saldi pr. konto og optjeningsperiode med udløbsdatoer.
+    /// Angiv asOf for at se saldoen på en anden dato, fx "hvor meget har jeg i december?".
+    /// </summary>
     [HttpGet]
-    public async Task<ActionResult<BalancesResponse>> Get(Guid employeeId)
+    public async Task<ActionResult<BalancesResponse>> Get(Guid employeeId, [FromQuery] DateOnly? asOf)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var result = await holidays.GetBalancesAsync(employeeId, today);
+        var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
+        var result = await holidays.GetBalancesAsync(employeeId, date);
 
         return result is null ? NotFound() : Ok(result);
     }
