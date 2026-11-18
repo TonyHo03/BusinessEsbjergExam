@@ -10,7 +10,7 @@ public class BalancesEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
 
     private async Task<BalancesResponse> GetBalances(string asOf)
     {
-        var response = await _client.GetAsync($"/employees/{ApiFactory.MetteId}/balances?asOf={asOf}");
+        var response = await _client.GetAsync($"api/employees/{ApiFactory.MetteId}/balances?asOf={asOf}");
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<BalancesResponse>(ApiFactory.Json))!;
     }
