@@ -10,7 +10,14 @@ namespace Tests.Unit;
 /// </summary>
 public class ScheduleChangeTests
 {
-    private static readonly Employee Mette = new() { Id = Guid.NewGuid(), StartDate = new DateOnly(2025, 9, 1) };
+    private static readonly Employee Mette = new()
+    {
+        Id = Guid.NewGuid(),
+        StartDate = new DateOnly(2025,
+            9,
+            1),
+        Role = Roles.Employee
+    };
 
     private static readonly ParameterResolver Parameters = new(
     [
