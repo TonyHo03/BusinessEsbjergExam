@@ -25,6 +25,7 @@ builder.Services.AddScoped(_ => new AppDb(new DataOptions().UsePostgreSQL(connec
 
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<RequestService>();
+builder.Services.AddScoped<TeamHolidayService>();
 builder.Services.AddScoped<HolidayService>();
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
