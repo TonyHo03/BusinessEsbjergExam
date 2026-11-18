@@ -11,4 +11,5 @@ public class AppDb(DataOptions options) : DataConnection(options)
     public ITable<DayOff> DaysOff => this.GetTable<DayOff>();
     public ITable<HolidayRequest> HolidayRequests => this.GetTable<HolidayRequest>();
     public ITable<LedgerEntry> LedgerEntries => this.GetTable<LedgerEntry>();
+    public ITable<TransferRequest> TransferRequests => this.GetTable<TransferRequest>();
 }

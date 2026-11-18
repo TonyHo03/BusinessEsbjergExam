@@ -9,7 +9,7 @@ CREATE TABLE employee (
                           start_date date NOT NULL,
                           end_date   date,
                           created_at timestamptz NOT NULL DEFAULT now()
-                          );
+);
 
 
 CREATE TABLE rule_parameter (
@@ -63,16 +63,30 @@ CREATE TABLE holiday_request (
                                  CHECK (end_date >= start_date)
 );
 
+CREATE TABLE transfer_request (
+                                  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                                  employee_id       uuid NOT NULL REFERENCES employee(id),
+                                  from_earning_year int  NOT NULL,          -- uge 1–5-perioden dagene flyttes fra
+                                  days              numeric(6,2) NOT NULL CHECK (days > 0),
+                                  status            text NOT NULL CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')),
+                                  comment           text,
+                                  rejection_reason  text,
+                                  decided_by        uuid REFERENCES employee(id),
+                                  decided_at        timestamptz,
+                                  created_at        timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE ledger_entry (
                               id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                               employee_id  uuid NOT NULL REFERENCES employee(id),
                               account      text NOT NULL CHECK (account IN ('Weeks1to5', 'Week6')),
                               earning_year int  NOT NULL,
-                              type         text NOT NULL CHECK (type IN ('Usage', 'Payout', 'Expiry', 'Adjustment')),
+                              type         text NOT NULL CHECK (type IN ('Usage', 'Payout', 'Expiry', 'Adjustment', 'Transfer')),
                               days         numeric(8,4) NOT NULL,  -- saldoens enhed: ferie er en ret til dage
                               hours        numeric(7,3) NOT NULL,  -- de timer det svarede til på datoen
                               entry_date   date NOT NULL,
-                              request_id   uuid REFERENCES holiday_request(id)
+                              request_id   uuid REFERENCES holiday_request(id),
+                              transfer_id  uuid REFERENCES transfer_request(id)
 );
 
 -- ===== Regelparametre for Business Esbjerg (KL 05.11-modellen) =====
@@ -82,7 +96,9 @@ INSERT INTO rule_parameter (key, value, effective_from) VALUES
                                                             ('week6.hours_per_month',      '3.083', '2020-01-01'),
                                                             ('main_holiday.days',          '15',    '2020-09-01'),
                                                             ('notice.main_holiday_months', '3',     '2020-09-01'),
-                                                            ('notice.other_months',        '1',     '2020-09-01');
+                                                            ('notice.other_months',        '1',     '2020-09-01'),
+                                                            ('transfer.enabled',           'true',  '2020-09-01'),
+                                                            ('transfer.max_days',          '5',     '2020-09-01');
 
 -- ===== Helligdage og firmafridage 2026–2027 =====
 
