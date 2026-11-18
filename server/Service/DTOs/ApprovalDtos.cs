@@ -5,7 +5,7 @@ namespace Service.DTOs;
 
 public static class ApprovalLimits
 {
-    public const int MaxReasonLength = 300;
+    public const int MaxReasonLength = 500;
 }
 
 public record PendingRequestDto(
@@ -21,6 +21,6 @@ public record PendingRequestDto(
     string? Note,
     bool IsOwnRequest);
     
-public record RejectRequestDto([property: Required, StringLength(ApprovalLimits.MaxReasonLength)] string Reason);
+public record RejectRequestDto([param: Required, StringLength(500)] string Reason);
 
 public record DecisionResponseDto(Guid RequestId, RequestStatus Status);
