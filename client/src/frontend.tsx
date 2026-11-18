@@ -9,12 +9,18 @@ import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { App } from "./App";
 import {BrowserRouter} from "react-router";
+import {TooltipProvider} from "./components/ui/tooltip.tsx";
+import {AuthProvider} from "./components/authProvider.tsx";
 
 const elem = document.getElementById("root")!;
 const app = (
   <StrictMode>
       <BrowserRouter>
-          <App />
+          <AuthProvider>
+              <TooltipProvider>
+                  <App />
+              </TooltipProvider>
+          </AuthProvider>
       </BrowserRouter>
   </StrictMode>
 );

@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "bun --hot src/index.ts",
     "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
-    "generate-api": "swagger-typescript-api generate -p http://localhost:5265/swagger/v1/swagger.json -o src/api -n Api.ts",
+    "generate-api": "bunx swagger-typescript-api generate --path http://localhost:5265/swagger/v1/swagger.json --output ./src/api --unwrap-response-data --extract-request-params",
     "start": "NODE_ENV=production bun src/index.ts",
     "typecheck": "bun check"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "bun-plugin-tailwind": "^0.1.2",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",

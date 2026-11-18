@@ -9,5 +9,5 @@ public class LoginRequest
     public required string Password { get; set; }
 }
 
-[Facet(typeof(Employee), Include = [nameof(Employee.Id), nameof(Employee.Role)])]
+[Facet(typeof(Employee), Include = [nameof(Employee.Id), nameof(Employee.Role), nameof(Employee.Name), nameof(Employee.Email)])]
 public partial class CurrentLoggedUser {}

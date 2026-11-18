@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using API;
@@ -13,8 +14,8 @@ var config = builder.Configuration;
 
 const string CookieName = "access_token";
 
-var connectionString = config.GetConnectionString("Default")
-                       ?? throw new InvalidOperationException("ConnectionStrings:Default is missing");
+var connectionString = config.GetConnectionString("Db")
+                       ?? throw new InvalidOperationException("ConnectionStrings:Db is missing");
 var jwtKey = config["Jwt:Key"];
 if (jwtKey is null || jwtKey.Length < 32)
     throw new InvalidOperationException("Jwt:Key must be at least 32 characters");
@@ -48,7 +49,6 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
             NameClaimType = "sub",
-            RoleClaimType = "role"
         };
         options.Events = new JwtBearerEvents
         {
@@ -56,6 +56,36 @@ builder.Services
             {
                 ctx.Token = ctx.Request.Cookies[CookieName];
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async ctx =>
+            {
+                var employeeService = ctx.HttpContext.RequestServices.GetRequiredService<EmployeeService>();
+
+                if (!Guid.TryParse(ctx.Principal?.FindFirst("sub")?.Value, out var id))
+                {
+                    ctx.Fail("Invalid token");
+                    return;
+                }
+
+                var employee = await employeeService.GetById(id);
+
+                var identity = (ClaimsIdentity) ctx.Principal.Identity!;
+                
+                foreach (var c in identity.FindAll("role").ToList())
+                    identity.RemoveClaim(c);
+                
+                foreach (var c in identity.FindAll("name").ToList())
+                    identity.RemoveClaim(c);
+                
+                foreach (var c in identity.FindAll("email").ToList())
+                    identity.RemoveClaim(c);
+                
+                identity.AddClaim(new Claim("role", employee.Role.ToString()));
+                identity.AddClaim(new Claim("name", employee.Name));
+                identity.AddClaim(new Claim("email", employee.Email));
+
+                
+                Console.WriteLine(employee.Name);
             }
         };
     });
@@ -83,4 +113,4 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program { } // så integrationstests kan starte API'et
+public partial class Program { }
