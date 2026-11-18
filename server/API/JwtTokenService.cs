@@ -18,8 +18,7 @@ public class JwtTokenService(string key, string issuer, string audience)
         var descriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity([
-                new Claim("sub", employee.Id.ToString()),
-                new Claim("role", employee.Role.ToString())
+                new Claim("sub", employee.Id.ToString())
             ]),
             Issuer = issuer,
             Audience = audience,

@@ -15,12 +15,12 @@ public class AuthController(EmployeeService employeeService, JwtTokenService jwt
     readonly bool _cookieSecure = config.GetValue("Jwt:CookieSecure", true);
 
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest req)
+    public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrEmpty(req.Password))
             return BadRequest(new { error = "Username and password are required" });
 
-        var user = employeeService.Login(req.Email, req.Password);
+        var user = await employeeService.Login(req.Email, req.Password);
         if (user is null) return Unauthorized();
 
         var (token, expires) = jwt.Create(user);
@@ -52,11 +52,14 @@ public class AuthController(EmployeeService employeeService, JwtTokenService jwt
 
         var id = User.FindFirst("sub")?.Value;
         var role = User.FindFirst("role")?.Value;
+        var name = User.FindFirst("name")?.Value;
+        var email = User.FindFirst("email")?.Value;
+
 
         bool result = Enum.TryParse(role, out Roles newRole);
 
         if (!result) return BadRequest();
         
-        return Ok(new CurrentLoggedUser(new() {Id = Guid.Parse(id!), Role = newRole}));
+        return Ok(new CurrentLoggedUser(new() {Id = Guid.Parse(id!), Name = name!,Role = newRole, Email = email!}));
     }
 }

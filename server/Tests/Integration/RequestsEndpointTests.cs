@@ -31,7 +31,7 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
     {
         var input = Week(MondayAfter(42)); // 6 uger ude: varslet er overholdt
 
-        var response = await _client.PostAsJsonAsync("/requests/preview", input, ApiFactory.Json);
+        var response = await _client.PostAsJsonAsync("/api/requests/preview", input, ApiFactory.Json);
         response.EnsureSuccessStatusCode();
         var preview = (await response.Content.ReadFromJsonAsync<RequestPreview>(ApiFactory.Json))!;
 
@@ -49,7 +49,7 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
     {
         var input = Week(MondayAfter(3)); // under 1 måneds varsel
 
-        var response = await _client.PostAsJsonAsync("/requests/preview", input, ApiFactory.Json);
+        var response = await _client.PostAsJsonAsync("/api/requests/preview", input, ApiFactory.Json);
         var preview = (await response.Content.ReadFromJsonAsync<RequestPreview>(ApiFactory.Json))!;
 
         Assert.False(preview.IsValid);
@@ -61,7 +61,7 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
     {
         var input = Week(MondayAfter(56));
 
-        var response = await _client.PostAsJsonAsync("/requests", input, ApiFactory.Json);
+        var response = await _client.PostAsJsonAsync("/api/requests", input, ApiFactory.Json);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var created = (await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json))!;
@@ -78,7 +78,7 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
     {
         var input = Week(MondayAfter(3));
 
-        var response = await _client.PostAsJsonAsync("/requests", input, ApiFactory.Json);
+        var response = await _client.PostAsJsonAsync("/api/requests", input, ApiFactory.Json);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var preview = (await response.Content.ReadFromJsonAsync<RequestPreview>(ApiFactory.Json))!;
@@ -91,7 +91,7 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
         var monday = MondayAfter(42);
         var input = new RequestInput(ApiFactory.MetteId, HolidayAccount.Weeks1To5, monday, monday.AddDays(-1), null);
 
-        var response = await _client.PostAsJsonAsync("/requests/preview", input, ApiFactory.Json);
+        var response = await _client.PostAsJsonAsync("/api/requests/preview", input, ApiFactory.Json);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -99,7 +99,7 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
     [Fact]
     public async Task Unknown_employee_gives_404()
     {
-        var response = await _client.PostAsJsonAsync("/requests/preview", Week(MondayAfter(42), Guid.NewGuid()), ApiFactory.Json);
+        var response = await _client.PostAsJsonAsync("/api/requests/preview", Week(MondayAfter(42), Guid.NewGuid()), ApiFactory.Json);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

@@ -8,7 +8,8 @@ CREATE TABLE employee (
                           role       text NOT NULL,
                           start_date date NOT NULL,
                           end_date   date,
-                          created_at timestamptz NOT NULL DEFAULT now()
+                          created_at timestamptz NOT NULL DEFAULT now(),
+                          status     text NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive'))
 );
 
 

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using API;
@@ -25,20 +26,19 @@ builder.Services.AddScoped(_ => new AppDb(new DataOptions().UsePostgreSQL(connec
 
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<RequestService>();
-builder.Services.AddScoped<TeamHolidayService>();
 builder.Services.AddScoped<HolidayService>();
-builder.Services.AddScoped<DatabaseSeeder>();
+builder.Services.AddScoped<TeamHolidayService>();
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
 builder.Services.AddScoped<ApprovalService>();
 builder.Services.AddScoped<TransferService>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddSingleton<PasswordHasher>();
 builder.Services.AddSingleton(new JwtTokenService(issuer: issuer, audience: audience, key: jwtKey));
 builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApiDocument();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<MyExceptionHandler>();
-builder.Services.AddAuthorization(AccessPolicies.Register);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -55,7 +55,6 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
             NameClaimType = "sub",
-            RoleClaimType = "role"
         };
         options.Events = new JwtBearerEvents
         {
@@ -63,10 +62,41 @@ builder.Services
             {
                 ctx.Token = ctx.Request.Cookies[CookieName];
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async ctx =>
+            {
+                var employeeService = ctx.HttpContext.RequestServices.GetRequiredService<EmployeeService>();
+
+                if (!Guid.TryParse(ctx.Principal?.FindFirst("sub")?.Value, out var id))
+                {
+                    ctx.Fail("Invalid token");
+                    return;
+                }
+
+                var employee = await employeeService.GetById(id);
+
+                var identity = (ClaimsIdentity) ctx.Principal.Identity!;
+                
+                foreach (var c in identity.FindAll("role").ToList())
+                    identity.RemoveClaim(c);
+                
+                foreach (var c in identity.FindAll("name").ToList())
+                    identity.RemoveClaim(c);
+                
+                foreach (var c in identity.FindAll("email").ToList())
+                    identity.RemoveClaim(c);
+                
+                identity.AddClaim(new Claim("role", employee.Role.ToString()));
+                identity.AddClaim(new Claim("name", employee.Name));
+                identity.AddClaim(new Claim("email", employee.Email));
+
+                
+                Console.WriteLine(employee.Name);
             }
         };
     });
 
+builder.Services.AddAuthorization(AccessPolicies.Register);
 
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:3000"];
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowCredentials().AllowAnyHeader().AllowAnyMethod()));
@@ -88,4 +118,4 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program { } // så integrationstests kan starte API'et
+public partial class Program { }

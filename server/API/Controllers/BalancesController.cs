@@ -4,7 +4,7 @@ using Service;
 namespace API.Controllers;
 
 [ApiController]
-[Route("employees/{employeeId:guid}/balances")]
+[Route("api/employees/{employeeId:guid}/balances")]
 public class BalancesController(HolidayService holidays) : ControllerBase
 {
     /// <summary>

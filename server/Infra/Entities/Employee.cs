@@ -6,12 +6,13 @@ namespace Infra;
 [Table("employee")]
 public class Employee
 {
-    [PrimaryKey, Column("id")] public Guid Id { get; set; }
+    [PrimaryKey, Column("id")] public Guid Id { get; set; } = Guid.NewGuid();
     [Column("name"), NotNull] public string Name { get; set; } = "";
     [Column("email"), NotNull] public string Email { get; set; } = "";
     [Column("password_hash"), NotNull] public string PasswordHash { get; set; } = "";
-    [Column("start_date")] public DateOnly StartDate { get; set; }
+    [Column("start_date")] public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
     [Column("end_date")] public DateOnly? EndDate { get; set; }
-    [Column("created_at")] public DateTimeOffset CreatedAt { get; set; }
+    [Column("created_at")] public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    [Column("status")] public Status Status { get; set; } = Status.Active;
     [Column("role", DataType = DataType.NVarChar, Length = 255), NotNull] public required Roles Role { get; set; }
 }

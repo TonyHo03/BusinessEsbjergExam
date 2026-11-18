@@ -4,7 +4,7 @@ using Service;
 namespace API.Controllers;
 
 [ApiController]
-[Route("requests")]
+[Route("api/requests")]
 public class RequestsController(RequestService requests) : ControllerBase
 {
     private const int MaxDays = 366;
