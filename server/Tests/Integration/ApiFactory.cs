@@ -45,6 +45,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // "Testing" gør, at appsettings.Development.json ikke indlæses
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Db", _database.GetConnectionString());
+        builder.UseSetting("Jwt:Key", "test-key-der-kun-bruges-i-integrationstestene-1234");
+        builder.UseSetting("Jwt:Issuer", "Test");
+        builder.UseSetting("Jwt:Audience", "Test");
     }
 
     async Task IAsyncLifetime.DisposeAsync()
