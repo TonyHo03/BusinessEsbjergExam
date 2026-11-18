@@ -26,6 +26,7 @@ builder.Services.AddScoped(_ => new AppDb(new DataOptions().UsePostgreSQL(connec
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<RequestService>();
 builder.Services.AddScoped<HolidayService>();
+builder.Services.AddScoped<TeamHolidayService>();
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddSingleton<PasswordHasher>();
 builder.Services.AddSingleton(new JwtTokenService(issuer: issuer, audience: audience, key: jwtKey));
@@ -91,7 +92,6 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
-
 
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:3000"];
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowCredentials().AllowAnyHeader().AllowAnyMethod()));
