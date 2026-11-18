@@ -4,10 +4,11 @@ namespace Infra;
 
 public enum LedgerEntryType
 {
-    [MapValue("Usage")] Usage,          // afholdt ferie
-    [MapValue("Payout")] Payout,        // udbetalt
-    [MapValue("Expiry")] Expiry,        // udløbet / sendt til feriefond
-    [MapValue("Adjustment")] Adjustment // manuel rettelse fra bogholderiet
+    [MapValue("Usage")] Usage,           // afholdt ferie
+    [MapValue("Payout")] Payout,         // udbetalt
+    [MapValue("Expiry")] Expiry,         // udløbet / sendt til feriefond
+    [MapValue("Adjustment")] Adjustment, // manuel rettelse fra bogholderiet
+    [MapValue("Transfer")] Transfer      // overført til næste ferieår
 }
 
 /// <summary>
@@ -29,4 +30,5 @@ public class LedgerEntry
     [Column("hours")] public decimal Hours { get; set; }
     [Column("entry_date")] public DateOnly EntryDate { get; set; }
     [Column("request_id")] public Guid? RequestId { get; set; }
+    [Column("transfer_id")] public Guid? TransferId { get; set; }
 }

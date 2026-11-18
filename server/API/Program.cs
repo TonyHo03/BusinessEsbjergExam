@@ -30,6 +30,7 @@ builder.Services.AddScoped<HolidayService>();
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
 builder.Services.AddScoped<ApprovalService>();
+builder.Services.AddScoped<TransferService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<PasswordHasher>();
 builder.Services.AddSingleton(new JwtTokenService(issuer: issuer, audience: audience, key: jwtKey));

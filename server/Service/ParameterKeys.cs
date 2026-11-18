@@ -7,4 +7,6 @@ public static class ParameterKeys
     public const string MainHolidayDays = "main_holiday.days";
     public const string NoticeMainHolidayMonths = "notice.main_holiday_months";
     public const string NoticeOtherMonths = "notice.other_months";
+    public const string TransferEnabled = "transfer.enabled";
+    public const string TransferMaxDays = "transfer.max_days";
 }
