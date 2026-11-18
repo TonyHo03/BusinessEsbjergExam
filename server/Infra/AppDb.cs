@@ -3,7 +3,7 @@ using LinqToDB.Data;
 
 namespace Infra;
 
-public class AppDb(DataOptions<AppDb> options) : DataConnection(options.Options)
+public class AppDb(DataOptions options) : DataConnection(options)
 {
     public ITable<Employee> Employees => this.GetTable<Employee>();
     public ITable<RuleParameter> RuleParameters => this.GetTable<RuleParameter>();

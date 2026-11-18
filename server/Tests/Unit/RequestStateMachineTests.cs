@@ -1,7 +1,8 @@
+using Infra;
 using Service.Approvals;
 using Xunit;
 
-namespace HolidayPlanner.UnitTests.Approvals;
+namespace Tests.Unit;
 
 public class RequestStateMachineTests
 {

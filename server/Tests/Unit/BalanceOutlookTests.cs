@@ -7,7 +7,14 @@ namespace Tests.Unit;
 /// <summary>Saldoen set fra en ansøgnings startdato, beregnet ud fra Mettes data.</summary>
 public class BalanceOutlookTests
 {
-    private static readonly Employee Mette = new() { Id = Guid.NewGuid(), StartDate = new DateOnly(2025, 9, 1) };
+    private static readonly Employee Mette = new()
+    {
+        Id = Guid.NewGuid(),
+        StartDate = new DateOnly(2025,
+            9,
+            1),
+        Role = Roles.Employee
+    };
 
     private static readonly WorkSchedule[] FullTime = [TestSchedules.FullTime()];
 

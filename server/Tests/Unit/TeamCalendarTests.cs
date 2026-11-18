@@ -123,7 +123,15 @@ public class TeamCalendarTests
     }
 
     private static Employee Employee(string name, DateOnly start, DateOnly? end = null) =>
-        new() { Id = Guid.NewGuid(), Name = name, Email = $"{name.Split(' ')[0].ToLower()}@businessesbjerg.com", StartDate = start, EndDate = end };
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Email = $"{name.Split(' ')[0].ToLower()}@businessesbjerg.com",
+            StartDate = start,
+            EndDate = end,
+            Role = Roles.Employee
+        };
 
     private static HolidayRequest Request(Employee employee, int startDay, int endDay, RequestStatus status) =>
         new()
