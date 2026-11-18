@@ -14,8 +14,8 @@ var config = builder.Configuration;
 
 const string CookieName = "access_token";
 
-var connectionString = config.GetConnectionString("Default")
-                       ?? throw new InvalidOperationException("ConnectionStrings:Default is missing");
+var connectionString = config.GetConnectionString("Db")
+                       ?? throw new InvalidOperationException("ConnectionStrings:Db is missing");
 var jwtKey = config["Jwt:Key"];
 if (jwtKey is null || jwtKey.Length < 32)
     throw new InvalidOperationException("Jwt:Key must be at least 32 characters");
