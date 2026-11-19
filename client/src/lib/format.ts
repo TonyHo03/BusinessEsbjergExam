@@ -23,9 +23,9 @@ export function formatDate(iso: string) {
 export function formatDateRange(startIso: string, endIso: string){
     const s = parts(startIso)
     const e = parts(endIso)
-    if (s.y === e.y && s.month === e.month) return `${s.d}-${e.d} ${s.month} ${s.y}`;
-    if (s.y === e.y) return `${s.d} ${s.month} ${e.d} ${e.month} ${s.y}`;
-    return `${s.d} ${s.month} ${s.y} ${e.d} ${e.month} ${e.y}`
+    if (s.y === e.y && s.month === e.month) return `${s.d}–${e.d} ${s.month} ${s.y}`;
+    if (s.y === e.y) return `${s.d} ${s.month} – ${e.d} ${e.month} ${s.y}`;
+    return `${s.d} ${s.month} ${s.y} – ${e.d} ${e.month} ${e.y}`
 }
 export function initials(name: string): string {
     const words = name.trim().split(/\s+/).filter(Boolean);
