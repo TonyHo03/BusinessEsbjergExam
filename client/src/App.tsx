@@ -11,6 +11,7 @@ import RequireRole from "./components/RequireRole.tsx";
 import {Roles} from "@/api/Api.ts";
 import {RequestHolidayView} from "./pages/requestHoliday.tsx";
 import {ParametersView} from "@/pages/parameters.tsx";
+import {EmployeeOverviewView} from "@/pages/employeeOverview.tsx";
 
 export function App() {
     return (
@@ -33,6 +34,7 @@ export function App() {
                         </Route>*/}
 
                         <Route path={routes.pendingApprovals} element={<PendingApprovalsPage/>}/>
+                        <Route path={routes.employeeOverview} element={<EmployeeOverviewView/>}/>
                         <Route path={routes.userManagement} element={<UserManagementView/>}/>
                         <Route path={routes.parameters} element={<ParametersView/>}/>
 
