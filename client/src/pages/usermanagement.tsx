@@ -196,7 +196,7 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [role, setRole] = useState<Roles>(Roles.Employee);
-    const [startDate, setStartDate] = useState<string>(new Date().toISOString().slice(0, 10));
+    const [startDate, setStartDate] = useState<string>(new Date().toLocaleDateString("sv-SE")); // YYYY-MM-DD i lokal tid
 
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>()

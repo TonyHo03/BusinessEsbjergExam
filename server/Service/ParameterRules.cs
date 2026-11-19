@@ -12,13 +12,13 @@ public static class ParameterRules
 {
     public static readonly IReadOnlyList<ParameterDefinition> Definitions =
     [
-        new(ParameterKeys.Weeks1To5DaysPerMonth, "Uge 1–5: dage optjent pr. måned", ParameterKind.Decimal),
-        new(ParameterKeys.Week6HoursPerMonth, "6. ferieuge: timer pr. måned (fuldtid)", ParameterKind.Decimal),
-        new(ParameterKeys.MainHolidayDays, "Hovedferie: antal sammenhængende dage", ParameterKind.Integer),
-        new(ParameterKeys.NoticeMainHolidayMonths, "Varsel for hovedferie (måneder)", ParameterKind.Integer),
-        new(ParameterKeys.NoticeOtherMonths, "Varsel for øvrig ferie (måneder)", ParameterKind.Integer),
-        new(ParameterKeys.TransferEnabled, "Overførsel af ferie er slået til", ParameterKind.Boolean),
-        new(ParameterKeys.TransferMaxDays, "Overførsel: højst antal dage", ParameterKind.Decimal)
+        new(ParameterKeys.Weeks1To5DaysPerMonth, "Weeks 1–5: days earned per month", ParameterKind.Decimal),
+        new(ParameterKeys.Week6HoursPerMonth, "6th week: hours earned per month (full time)", ParameterKind.Decimal),
+        new(ParameterKeys.MainHolidayDays, "Main holiday: consecutive days", ParameterKind.Integer),
+        new(ParameterKeys.NoticeMainHolidayMonths, "Notice for main holiday (months)", ParameterKind.Integer),
+        new(ParameterKeys.NoticeOtherMonths, "Notice for other holiday (months)", ParameterKind.Integer),
+        new(ParameterKeys.TransferEnabled, "Holiday transfers enabled", ParameterKind.Boolean),
+        new(ParameterKeys.TransferMaxDays, "Transfers: maximum days", ParameterKind.Decimal)
     ];
 
     /// <summary>
@@ -30,30 +30,30 @@ public static class ParameterRules
     {
         var definition = Definitions.FirstOrDefault(d => d.Key == key);
         if (definition is null)
-            return [$"Ukendt parameter '{key}'."];
+            return [$"Unknown parameter '{key}'."];
 
         var errors = new List<string>();
 
         if (!IsValidValue(definition.Kind, value))
             errors.Add(definition.Kind switch
             {
-                ParameterKind.Boolean => "Værdien skal være true eller false.",
-                ParameterKind.Integer => "Værdien skal være et helt tal, der ikke er negativt.",
-                _ => "Værdien skal være et tal, der ikke er negativt (brug punktum som decimaltegn)."
+                ParameterKind.Boolean => "The value must be true or false.",
+                ParameterKind.Integer => "The value must be a whole number that is not negative.",
+                _ => "The value must be a number that is not negative (use a dot as decimal separator)."
             });
 
         if (effectiveFrom < today)
-            errors.Add("En ændring kan ikke gælde bagud i tid. Vælg i dag eller en senere dato.");
+            errors.Add("A change cannot apply to the past. Choose today or a later date.");
 
         if (existing.Any(p => p.Key == key && p.EffectiveFrom == effectiveFrom))
-            errors.Add($"Der findes allerede en værdi, der gælder fra {effectiveFrom:dd.MM.yyyy}.");
+            errors.Add($"A value already applies from {effectiveFrom:dd.MM.yyyy}.");
 
         return errors;
     }
 
     /// <summary>Kun værdier, der ikke er trådt i kraft endnu, kan slettes – ellers ville det ændre fortiden.</summary>
     public static string? CanDelete(RuleParameter parameter, DateOnly today) =>
-        parameter.EffectiveFrom > today ? null : "Værdien er allerede trådt i kraft og kan ikke slettes.";
+        parameter.EffectiveFrom > today ? null : "This value is already in effect and cannot be deleted.";
 
     private static bool IsValidValue(ParameterKind kind, string value) => kind switch
     {
