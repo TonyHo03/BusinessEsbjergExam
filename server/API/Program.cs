@@ -31,6 +31,8 @@ builder.Services.AddScoped<TeamHolidayService>();
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
 builder.Services.AddScoped<ApprovalService>();
 builder.Services.AddScoped<TransferService>();
+builder.Services.AddScoped<EmployeeOverviewService>();
+builder.Services.AddScoped<ParameterService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddSingleton<PasswordHasher>();
@@ -55,6 +57,7 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
             NameClaimType = "sub",
+            RoleClaimType = "role" // ellers virker RequireRole ikke, fordi rollen ligger i claimet "role"
         };
         options.Events = new JwtBearerEvents
         {
