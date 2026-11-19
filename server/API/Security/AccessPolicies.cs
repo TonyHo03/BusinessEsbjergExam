@@ -7,8 +7,11 @@ namespace API.Security;
 public static class AccessPolicies
 {
     public const string AccountingRights = nameof(AccountingRights);
-    
-    public static void Register(AuthorizationOptions options) =>    
+    public const string AdminRights = nameof(AdminRights);
+
+    public static void Register(AuthorizationOptions options)
+    {
         options.AddPolicy(AccountingRights, policy => policy.RequireRole(AccountingRoles.Names));
-    
+        options.AddPolicy(AdminRights, policy => policy.RequireRole(AccountingRoles.Admin));
+    }
 }

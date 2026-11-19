@@ -35,6 +35,8 @@ export function UserManagementView() {
 
 
     const [employees, setEmployees] = useState<EmployeeDto[]>([])
+    const [search, setSearch] = useState<string>("");
+    const [roleFilter, setRoleFilter] = useState<Roles | null>(null);
     const [open, setOpen] = useState<boolean>(false);
     const [openEditing, setOpenEditing] = useState<boolean>(false);
 
@@ -46,6 +48,12 @@ export function UserManagementView() {
         api.api.userGetAllUsers().then(setEmployees).catch(err => console.log(err));
 
     }, []);
+
+    // Søg på navn eller email (uden forskel på store og små bogstaver) og filtrér på rolle
+    const term = search.trim().toLowerCase();
+    const filtered = employees.filter(e =>
+        (!term || e.name?.toLowerCase().includes(term) || e.email?.toLowerCase().includes(term)) &&
+        (!roleFilter || e.role === roleFilter));
 
     return (
         <div className="flex flex-col w-full h-full p-12 gap-4">
@@ -82,22 +90,23 @@ export function UserManagementView() {
             <div className="flex w-full">
                 <div className="flex flex-col gap-2">
                     <Label>Find a user:</Label>
-                    <Input className="bg-card!" placeholder="Search after name or email..."/>
+                    <Input className="bg-card!" placeholder="Search after name or email..."
+                           value={search} onChange={e => setSearch(e.target.value)}/>
                 </div>
                 <div className="flex flex-col gap-2 ml-auto">
                     <Label>Role:</Label>
-                    <Select>
+                    <Select value={roleFilter} onValueChange={v => setRoleFilter((v as Roles) ?? null)}>
                         <SelectTrigger>
                             <SelectValue className="pr-12" placeholder={"All Roles"}/>
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value={null}>All Roles</SelectItem>
-                            {Object.values(Roles).map(r => <SelectItem value={r}>{r}</SelectItem>)}
+                            {Object.values(Roles).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
             </div>
-            <UserTable employees={employees} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing}/>
+            <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing}/>
             <CreateEmployeeDialog open={open} setOpen={setOpen}/>
             <UpdateEmployeeDialog open={openEditing} setOpen={setOpenEditing} editingEmployee={editingEmployee} setEditingEmployee={setEditingEmployee}/>
         </div>
@@ -132,7 +141,12 @@ function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: 
                     </TableRow>
                 </TableHeader>
                 <TableBody className="[&_td]:py-4 [&_td]:text-[#023459]">
-                    {employees.sort((a, b) => a.name!.localeCompare(b.name!)).map(e => (
+                    {employees.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground">No users match your search.</TableCell>
+                        </TableRow>
+                    )}
+                    {[...employees].sort((a, b) => a.name!.localeCompare(b.name!)).map(e => (
                         <TableRow key={e.id}>
                             <TableCell>
                                 <div className="flex items-center gap-3">
@@ -181,16 +195,26 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
     const [name, setName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [role, setRole] = useState<Roles | null>(null)
+    const [role, setRole] = useState<Roles>(Roles.Employee);
+    const [startDate, setStartDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>()
 
-    const handleSubmit = async () => {
-
-        await api.api.userCreateUser({name: name, email: email, password: password, role: role!});
-        window.location.reload();
-
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault(); // ellers genindlæser browseren siden, før kaldet er sendt
+        setSubmitting(true);
+        setError(null);
+        try {
+            await api.api.userCreateUser({name, email, password, role, startDate});
+            window.location.reload();
+        } catch (err: any) {
+            // API'et sender { title: "..." } – læs den, hvis den er der
+            const problem = await err?.json?.().catch(() => null);
+            setError(problem?.title ?? "Could not create the employee. Check the details and try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     return (
@@ -215,9 +239,13 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
                         <Select value={role} onValueChange={v => v && setRole(v as Roles)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {Object.values(Roles).map(r => <SelectItem value={r}>{r}</SelectItem>)}
+                                {Object.values(Roles).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="startDate">Start date</Label>
+                        <Input id="startDate" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="password">Temporary password</Label>
@@ -246,9 +274,18 @@ function UpdateEmployeeDialog({open, setOpen, editingEmployee, setEditingEmploye
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>()
 
-    const handleSubmit = async () => {
-        await api.api.userUpdateUser({id: editingEmployee?.id!}, {name: name, email: email, role: role!});
-        window.location.reload();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError(null);
+        try {
+            await api.api.userUpdateUser({id: editingEmployee?.id!}, {name: name, email: email, role: role!});
+            window.location.reload();
+        } catch {
+            setError("Could not save the changes. Try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     useEffect(() => {
@@ -275,18 +312,18 @@ function UpdateEmployeeDialog({open, setOpen, editingEmployee, setEditingEmploye
                 <form onSubmit={handleSubmit} className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" defaultValue={editingEmployee?.name} value={name} onChange={e => setName(e.target.value)} required />
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue={editingEmployee?.email} value={email} onChange={e => setEmail(e.target.value)} required />
+                        <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label>Role</Label>
-                        <Select defaultValue={editingEmployee?.role} value={role} onValueChange={v => v && setRole(v as Roles)}>
+                        <Select value={role} onValueChange={v => v && setRole(v as Roles)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {Object.values(Roles).map(r => <SelectItem value={r}>{r}</SelectItem>)}
+                                {Object.values(Roles).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

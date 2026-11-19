@@ -21,16 +21,16 @@ public class RequestStateMachineTests
         Assert.True(result.IsAllowed);
         Assert.Equal(RequestStatus.Approved, result.NewStatus);
     }
-
+    
     [Fact]
-    public void Approve_OwnRequest_IsDenied()
+    public void Approve_OwnRequest_IsAllowed()
     {
+        // Afklaret 16/11: bogholderen må godkende sin egen anmodning
         var result = RequestStateMachine.Apply(RequestStatus.Pending, RequestAction.Approve, Ctx(owner: true, accountingRights: true));
 
-        Assert.False(result.IsAllowed);
-        Assert.Equal(RequestStatus.Pending, result.NewStatus);
+        Assert.True(result.IsAllowed);
+        Assert.Equal(RequestStatus.Approved, result.NewStatus);
     }
-
     [Fact]
     public void Approve_ByNonAccounting_IsDenied()
     {

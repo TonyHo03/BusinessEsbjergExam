@@ -41,8 +41,6 @@ public class RequestStateMachine
             return TransitionResult.Deny(current, $"Only pending requests can be {target.ToString().ToLowerInvariant()}");
         if (!ctx.ActorHasAccountingRights)
             return TransitionResult.Deny(current, $"Only accounting can  {verb} requests");
-        if (ctx.ActorIsOwner)
-            return TransitionResult.Deny(current, $"You cannot  {verb} your own request. Another approval is required");
         if (requireReason && string.IsNullOrWhiteSpace(ctx.Reason))
             return TransitionResult.Deny(current, $"A reason is required when rejecting a request");
 
