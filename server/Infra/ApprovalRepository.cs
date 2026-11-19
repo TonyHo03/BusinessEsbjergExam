@@ -26,29 +26,35 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
         return await query.ToListAsync(ct);
     }
 
+    public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken ct)
+    {
+        var query = from request in db.HolidayRequests
+            join employee in db.Employees on request.EmployeeId equals employee.Id
+            where request.Id == id
+            select new HolidayRequestSnapshot(
+                request.Id,
+                request.EmployeeId, employee.Name,
+                request.Status,
+                request.StartDate,
+                request.EndDate,
+                request.WorkingDays,
+                request.Hours,
+                request.Account,
+                request.CreatedAt,
+                request.Comment
+            );
+        return await query.FirstOrDefaultAsync(ct);
+    }
 
-public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken ct)
-{
-    var query = from request in db.HolidayRequests
-        join employee in db.Employees on request.EmployeeId equals employee.Id
-        where request.Id == id
-        select new HolidayRequestSnapshot(
-            request.Id,
-            request.EmployeeId, employee.Name,
-            request.Status,
-            request.StartDate,
-            request.EndDate,
-            request.WorkingDays,
-            request.Hours,
-            request.Account,
-            request.CreatedAt,
-            request.Comment
-        );
-    return await  query.FirstOrDefaultAsync(ct);
-}
+    public async Task<LedgerData> GetLedgerDataAsync(Guid employeeId, CancellationToken ct) =>
+        new(
+            await db.Employees.FirstAsync(e => e.Id == employeeId, ct),
+            await db.WorkSchedules.Where(s => s.EmployeeId == employeeId).ToListAsync(ct),
+            await db.LedgerEntries.Where(e => e.EmployeeId == employeeId).ToListAsync(ct),
+            await db.RuleParameters.ToListAsync(ct));
 
     public async Task<bool> TrySaveDecisionAsync(Guid requestId, RequestStatus expected, RequestStatus next, ApprovalAudit audit,
-        CancellationToken ct)
+        IReadOnlyList<LedgerEntry> ledgerEntries, CancellationToken ct)
     {
         await using var transaction = db.BeginTransaction();
 
@@ -65,7 +71,10 @@ public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken c
         }
 
         await db.InsertAsync(audit, token: ct);
-        
+
+        foreach (var entry in ledgerEntries)
+            await db.InsertAsync(entry, token: ct);
+
         transaction.Commit();
         return true;
     }
