@@ -65,6 +65,27 @@ public class ApprovalService(
 
         if (!transition.IsAllowed)
             return new(DecisionOutcome.NotAllowed, Error: transition.Error);
+        
+        // Godkendt ferie trækkes fra saldoen. Annulleres godkendt ferie, lægges den tilbage
+        IReadOnlyList<LedgerEntry> ledgerEntries = [];
+        var approving = transition.NewStatus == RequestStatus.Approved;
+        var cancellingApproved = request.Status == RequestStatus.Approved && transition.NewStatus == RequestStatus.Cancelled;
+
+        if (approving || cancellingApproved)
+        {
+            var data = await repository.GetLedgerDataAsync(request.EmployeeId, ct);
+            try
+            {
+                ledgerEntries = approving
+                    ? ApprovalLedger.ForApproval(request, data)
+                    : ApprovalLedger.ForCancellation(requestId, data.Entries, context.Today);
+            }
+            catch (InvalidOperationException e)
+            {
+                // Fx ikke dage nok på kontoen (saldoen kan have ændret sig siden ansøgningen) eller intet arbejdsskema
+                return new(DecisionOutcome.NotAllowed, Error: e.Message);
+            }
+        }
 
         var audit = new ApprovalAudit
         {
@@ -83,6 +104,7 @@ public class ApprovalService(
             request.Status,
             transition.NewStatus,
             audit,
+            ledgerEntries,
             ct);
 
         return saved
