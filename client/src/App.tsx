@@ -12,6 +12,7 @@ import {Roles} from "@/api/Api.ts";
 import {RequestHolidayView} from "./pages/requestHoliday.tsx";
 import {ParametersView} from "@/pages/parameters.tsx";
 import {EmployeeOverviewView} from "@/pages/employeeOverview.tsx";
+import {MyRequestsView} from "@/pages/myRequests.tsx";
 
 export function App() {
     return (
@@ -23,6 +24,7 @@ export function App() {
                     <Route element={<AppLayout/>}>
                         <Route path={routes.dashboard}/>
                         <Route path={routes.requestHolidays} element={<RequestHolidayView/>}/>
+                        <Route path={routes.myRequests} element={<MyRequestsView/>}/>
                         <Route path={routes.helpAndPolicies} element={<HelpPage/>}/>
 
                         {/*<Route element={<RequireRole min={Roles.Accountant}/>}>
