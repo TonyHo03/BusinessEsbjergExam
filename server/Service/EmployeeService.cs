@@ -19,6 +19,9 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
 
     public async Task Create(CreateEmployeeRequest request)
     {
+        if (await db.Employees.AnyAsync(e => e.Email == request.Email))
+            throw new InvalidOperationException("A user with this email already exists.");
+
         var employee = new Employee
         {
             Name = request.Name,
@@ -31,7 +34,6 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
 
         await db.InsertAsync(employee);
     }
-
     public async Task Update(Guid id, UpdateEmployeeRequest request)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(u => u.Id == id) ?? throw new KeyNotFoundException();
@@ -39,8 +41,6 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
         employee.Name = request.Name;
         employee.Email = request.Email;
         employee.Role = request.Role;
-        employee.StartDate = request.StartDate;
-        employee.EndDate = request.EndDate;
 
         await db.UpdateAsync(employee);
     }

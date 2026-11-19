@@ -27,7 +27,7 @@ public class DatabaseSeeder(AppDb db, PasswordHasher hasher)
  
     public void SeedUsers()
     {
-        if (db.Employees.Any())
+        if (db.Employees.Any(e => e.Role == Roles.Admin))
             return;
  
         db.Insert(new Employee

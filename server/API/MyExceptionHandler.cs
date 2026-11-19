@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace API;
-public class MyExceptionHandler : IExceptionHandler
+public class MyExceptionHandler(ILogger<MyExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext,
         Exception exception, CancellationToken cancellationToken)
@@ -21,6 +22,10 @@ public class MyExceptionHandler : IExceptionHandler
             InvalidOperationException => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status500InternalServerError
         };
+
+        // Uventede fejl skrives i terminalen, så man kan se, hvad der gik galt
+        if (status == StatusCodes.Status500InternalServerError)
+            logger.LogError(exception, "Unhandled exception on {Method} {Path}", httpContext.Request.Method, httpContext.Request.Path);
 
         httpContext.Response.StatusCode = status;
 

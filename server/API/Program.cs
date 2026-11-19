@@ -73,7 +73,17 @@ builder.Services
                     return;
                 }
 
-                var employee = await employeeService.GetById(id);
+                Employee employee;
+                try
+                {
+                    employee = await employeeService.GetById(id);
+                }
+                catch (KeyNotFoundException)
+                {
+                    // Brugeren findes ikke længere (fx efter nulstillet database)
+                    ctx.Fail("User no longer exists");
+                    return;
+                }
 
                 var identity = (ClaimsIdentity) ctx.Principal.Identity!;
                 
@@ -89,9 +99,6 @@ builder.Services
                 identity.AddClaim(new Claim("role", employee.Role.ToString()));
                 identity.AddClaim(new Claim("name", employee.Name));
                 identity.AddClaim(new Claim("email", employee.Email));
-
-                
-                Console.WriteLine(employee.Name);
             }
         };
     });
