@@ -4,7 +4,6 @@ using LinqToDB.Async;
 
 namespace Service;
 
-/// <summary>Henter alle medarbejdere med saldi til bogholderiets oversigt. Data hentes i få forespørgsler og grupperes i hukommelsen.</summary>
 public class EmployeeOverviewService(AppDb db)
 {
     public async Task<IReadOnlyList<EmployeeOverviewRow>> GetAsync(DateOnly asOf)

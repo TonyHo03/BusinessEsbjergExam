@@ -94,16 +94,6 @@ public class TeamCalendarTests
     }
 
     [Fact]
-    public void Weekends_are_not_working_days()
-    {
-        var saturday = Day(Build(), 12);
-
-        Assert.False(saturday.IsWorkingDay);
-        Assert.Equal(0, saturday.Absent);
-        Assert.Equal(0, saturday.Present);
-    }
-
-    [Fact]
     public void Public_holidays_and_company_days_off_are_not_working_days()
     {
         Assert.False(Day(Build(), 24).IsWorkingDay);

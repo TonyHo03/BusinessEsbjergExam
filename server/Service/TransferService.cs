@@ -5,7 +5,6 @@ using LinqToDB.Async;
 
 namespace Service;
 
-/// <param name="FromEarningYear">Uge 1–5-perioden dagene flyttes fra, fx 2025 (udløber 31.12.2026).</param>
 public record TransferInput(
     Guid EmployeeId,
     int FromEarningYear,
@@ -26,7 +25,6 @@ public record TransferResult(IReadOnlyList<string> Errors, TransferDto? Created)
 
 public record TransferDecision(DecisionOutcome Outcome, TransferDto? Transfer = null, string? Error = null);
 
-/// <summary>Overførsel af ferie: anmod, vis, og godkend eller afvis (bogholderiet).</summary>
 public class TransferService(AppDb db)
 {
     public async Task<TransferResult?> CreateAsync(TransferInput input, DateOnly today)
@@ -70,10 +68,6 @@ public class TransferService(AppDb db)
         .Select(ToDto)
         .ToList();
 
-    /// <summary>
-    /// Godkender eller afviser en ventende overførsel. Ved godkendelse tjekkes reglerne igen,
-    /// fordi saldoen kan have ændret sig, og dagene flyttes i ledgeren i samme transaktion.
-    /// </summary>
     public async Task<TransferDecision> DecideAsync(Guid id, bool approve, string? reason, Guid actorId, DateOnly today)
     {
         var transfer = await db.TransferRequests.FirstOrDefaultAsync(t => t.Id == id);
@@ -128,7 +122,6 @@ public class TransferService(AppDb db)
         return new TransferDecision(DecisionOutcome.Done, ToDto(transfer));
     }
 
-    /// <summary>Fejl efter reglerne i TransferRules. Null betyder, at medarbejderen ikke findes.</summary>
     private async Task<IReadOnlyList<string>?> ValidateAsync(
         Guid employeeId, int fromEarningYear, decimal days, DateOnly today, Guid? excludeId)
     {

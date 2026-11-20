@@ -2,10 +2,6 @@ using Infra;
 
 namespace Service;
 
-/// <summary>
-/// Saldoen for én konto i én optjeningsperiode. Alle tal er i dage.
-/// Omregn til timer med daglængden på den dato, saldoen vises eller bruges.
-/// </summary>
 public record PeriodBalance(HolidayAccount Account, int EarningYear, decimal Accrued, decimal Movements)
 {
     public decimal Remaining => Accrued + Movements;
@@ -20,30 +16,17 @@ public record PeriodBalance(HolidayAccount Account, int EarningYear, decimal Acc
         return ExpiryStatus.Active;
     }
 
-    /// <summary>Der er timer tilbage, og de udløber snart eller er udløbet: skal afholdes, overføres eller udbetales.</summary>
     public bool NeedsAction(DateOnly date, int warningDays = 60) =>
         Remaining > 0 && StatusOn(date, warningDays) is ExpiryStatus.ExpiringSoon or ExpiryStatus.Expired;
 }
 
-/// <summary>
-/// Regler for de to ferie-konti. Kontiene blandes aldrig:
-/// alle metoder arbejder kun på den konto, de bliver bedt om.
-/// </summary>
 public static class Ledger
 {
-    /// <summary>Summen af alle bevægelser (i dage) på én konto i én optjeningsperiode.</summary>
     public static decimal Movements(IEnumerable<LedgerEntry> entries, HolidayAccount account, int earningYear) =>
         entries
             .Where(e => e.Account == account && e.EarningYear == earningYear)
             .Sum(e => e.Days);
 
-    /// <summary>
-    /// Fordeler et forbrug af timer på de perioder, der kan bruges på datoen.
-    /// Timerne omregnes til dage med daglængden på datoen (fx 7,4 t for fuld tid).
-    /// Den ældste periode bruges først, så dage med kortest levetid forsvinder først.
-    /// Er der ikke dage nok, lånes resten af den igangværende optjeningsperiode (feriegæld),
-    /// så længe den samlede saldo ikke kommer under -debtLimitDays.
-    /// </summary>
     public static IReadOnlyList<LedgerEntry> AllocateUsage(
         Guid employeeId,
         HolidayAccount account,

@@ -2,12 +2,10 @@
 
 namespace Service;
 
-/// <summary>Én medarbejders godkendte ferie. Kun datoer – konto og kommentar er private.</summary>
 public record TeamAbsence(DateOnly StartDate, DateOnly EndDate);
 
 public record TeamMember(Guid EmployeeId, string Name, IReadOnlyList<TeamAbsence> Absences);
 
-/// <summary>Hvor mange der er væk og til stede på en dag. På weekender og fridage er begge 0.</summary>
 public record TeamDay(DateOnly Date, bool IsWorkingDay, int Absent, int Present);
 
 public record TeamCalendarResponse(
@@ -16,10 +14,6 @@ public record TeamCalendarResponse(
     IReadOnlyList<TeamMember> Members,
     IReadOnlyList<TeamDay> Days);
 
-/// <summary>
-/// Bygger holdkalenderen: alles godkendte ferie i en periode og antal væk/til stede pr. dag.
-/// Alle medarbejdere må se alles planlagte ferie.
-/// </summary>
 public static class TeamCalendar
 {
     public static TeamCalendarResponse Build(

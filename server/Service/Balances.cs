@@ -12,22 +12,10 @@ public enum ExpiryStatus
     Expired
 }
 
-/// <summary>
-/// Saldoen set fra en ansøgnings første feriedag, i timer efter daglængden den dag.
-/// AvailableAtStart: timer der kan bruges den dag (minus ventende ansøgninger).
-/// DebtLimit: hvor mange timer saldoen må gå i minus (1 uge efter medarbejderens skema, 0 for 6. ferieuge).
-/// YearEnd / AvailableAtYearEnd: det, der dækker ansøgningen set fra den 31. august (ældre perioders rest
-/// plus hele den igangværende periode). Efter ansøgningen må det ikke være negativt.
-/// </summary>
 public record BalanceOutlook(decimal AvailableAtStart, decimal DebtLimit, DateOnly YearEnd, decimal AvailableAtYearEnd);
 
-/// <summary>
-/// Samler optjening og bevægelser til saldi pr. konto og optjeningsperiode.
-/// Saldi føres i dage og omregnes til timer med daglængden på datoen.
-/// </summary>
 public static class Balances
 {
-    /// <summary>Saldi i dage pr. konto og optjeningsperiode på datoen.</summary>
     public static IReadOnlyList<PeriodBalance> For(
         Employee employee,
         ParameterResolver parameters,
@@ -62,17 +50,11 @@ public static class Balances
         return result;
     }
 
-    /// <summary>Dage der kan bruges på datoen på én konto.</summary>
     public static decimal AvailableOn(IEnumerable<PeriodBalance> balances, HolidayAccount account, DateOnly date) =>
         balances
             .Where(b => b.Account == account && HolidayPeriods.IsUsable(account, b.EarningYear, date))
             .Sum(b => b.Remaining);
 
-    /// <summary>
-    /// Beregner saldoen på ansøgningens startdato og den efterfølgende 31. august, i timer.
-    /// Optjening frem til datoen tæller med, så en ferie længere ude kan bruge flere timer.
-    /// Dagene omregnes med daglængden på startdatoen, så et skemaskift før ferien er taget med.
-    /// </summary>
     public static BalanceOutlook Outlook(
         Employee employee,
         IReadOnlyList<WorkSchedule> schedules,

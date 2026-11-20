@@ -5,7 +5,6 @@ namespace Service;
 
 public enum ParameterKind { Decimal, Integer, Boolean }
 
-/// <summary>De regelparametre, der findes, hvad de betyder, og hvilken slags værdi de tager.</summary>
 public record ParameterDefinition(string Key, string Description, ParameterKind Kind);
 
 public static class ParameterRules
@@ -21,10 +20,6 @@ public static class ParameterRules
         new(ParameterKeys.TransferMaxDays, "Transfers: maximum days", ParameterKind.Decimal)
     ];
 
-    /// <summary>
-    /// Tjekker en ny værdi. En ændring må aldrig påvirke fortiden, så den skal gælde fra i dag eller senere.
-    /// Den gamle værdi bliver stående og gælder stadig for datoer før.
-    /// </summary>
     public static IReadOnlyList<string> Validate(
         string key, string value, DateOnly effectiveFrom, DateOnly today, IEnumerable<RuleParameter> existing)
     {
@@ -51,7 +46,6 @@ public static class ParameterRules
         return errors;
     }
 
-    /// <summary>Kun værdier, der ikke er trådt i kraft endnu, kan slettes – ellers ville det ændre fortiden.</summary>
     public static string? CanDelete(RuleParameter parameter, DateOnly today) =>
         parameter.EffectiveFrom > today ? null : "This value is already in effect and cannot be deleted.";
 

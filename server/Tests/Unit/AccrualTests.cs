@@ -4,10 +4,6 @@ using Xunit;
 
 namespace Tests.Unit;
 
-/// <summary>
-/// Optjening i dage. Alle optjener 2,08 dage pr. måned på uge 1–5, uanset fuld tid eller deltid –
-/// hvor mange timer en dag er værd, afgøres først, når saldoen omregnes (se ScheduleChangeTests).
-/// </summary>
 public class AccrualTests
 {
     private static readonly ParameterResolver Parameters = new(

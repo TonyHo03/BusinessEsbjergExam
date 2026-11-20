@@ -4,7 +4,6 @@ using Xunit;
 
 namespace Tests.Unit;
 
-/// <summary>Saldi og bevægelser føres i dage. Forbrug angives i timer og omregnes med daglængden.</summary>
 public class LedgerTests
 {
     private static readonly Guid EmployeeId = Guid.NewGuid();
