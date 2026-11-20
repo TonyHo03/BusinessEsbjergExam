@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 export function PendingApprovalsPage() {
     const { state, busyId, actionError, reload, approve, reject } = usePendingApprovals();
     const items = state.kind === 'ready' ? state.items : [];
-    const reservedHours = items.reduce((sum, i) => sum + i.hours, 0);
+    // Annulleringer reserverer ikke timer – ferien er allerede trukket fra saldoen
+    const reservedHours = items.filter((i) => !i.isCancellation).reduce((sum, i) => sum + i.hours, 0);
 
     return (
         <main className="flex flex-col w-full h-full p-12 gap-4">
@@ -100,6 +101,7 @@ function RequestRow({ item, busy, onApprove, onReject }: RequestRowProps) {
     const [reason, setReason] = useState('');
     const [reasonError, setReasonError] = useState<string | null>(null);
     const reasonId = `reason-${item.requestId}`;
+    const cancellation = item.isCancellation === true;
 
     async function confirmReject() {
         if (!reason.trim()) return setReasonError('Add a reason. The employee will see it.');
@@ -125,6 +127,11 @@ function RequestRow({ item, busy, onApprove, onReject }: RequestRowProps) {
                 <TableCell>
                     <div className="flex flex-col gap-1">
                         <span className="font-medium">{formatDateRange(item.startDate, item.endDate)}</span>
+                        {cancellation && (
+                            <span className="w-fit rounded-md bg-[#FEF3C7] px-2 py-0.5 text-xs font-medium text-[#92400E]">
+                                Wants to cancel this approved holiday
+                            </span>
+                        )}
                         <span className="text-xs text-muted-foreground">
                             {formatDays(item.workingDays)} · {formatHours(item.hours)} · {accountLabel(item.account)} · submitted {formatDate(item.submittedAt)}
                         </span>
@@ -134,13 +141,13 @@ function RequestRow({ item, busy, onApprove, onReject }: RequestRowProps) {
                 <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                         <button type="button" disabled={busy} className={primaryButton}
-                                onClick={() => void onApprove()} aria-label={`Approve request from ${item.employeeName}`}>
-                            <Check className="size-4" /> Approve
+                                onClick={() => void onApprove()} aria-label={`${cancellation ? 'Approve cancellation from' : 'Approve request from'} ${item.employeeName}`}>
+                            <Check className="size-4" /> {cancellation ? 'Approve cancellation' : 'Approve'}
                         </button>
                         <button type="button" disabled={busy} className={secondaryButton}
                                 aria-expanded={rejecting} onClick={() => setRejecting((open) => !open)}
-                                aria-label={`Reject request from ${item.employeeName}`}>
-                            <X className="size-4" /> Reject
+                                aria-label={`${cancellation ? 'Keep holiday for' : 'Reject request from'} ${item.employeeName}`}>
+                            <X className="size-4" /> {cancellation ? 'Keep holiday' : 'Reject'}
                         </button>
                     </div>
                 </TableCell>
@@ -149,7 +156,9 @@ function RequestRow({ item, busy, onApprove, onReject }: RequestRowProps) {
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableCell colSpan={3}>
                         <div className="flex flex-col gap-2">
-                            <label htmlFor={reasonId} className="text-sm font-medium text-[#023459]">Reason for rejecting</label>
+                            <label htmlFor={reasonId} className="text-sm font-medium text-[#023459]">
+                                {cancellation ? 'Why the holiday is kept' : 'Reason for rejecting'}
+                            </label>
                             <textarea id={reasonId} value={reason} maxLength={REASON_MAX_LENGTH} rows={3}
                                       className="w-full rounded-lg border-2 border-[#E9E1D6] bg-card p-3 text-sm text-[#023459] outline-none focus-visible:border-[#CE6B4C]"
                                       aria-invalid={reasonError !== null} aria-describedby={reasonError ? `${reasonId}-error` : undefined}
@@ -157,7 +166,7 @@ function RequestRow({ item, busy, onApprove, onReject }: RequestRowProps) {
                             {reasonError && <p id={`${reasonId}-error`} className="text-sm text-[#B5583B]">{reasonError}</p>}
                             <div className="flex gap-2">
                                 <button type="button" disabled={busy} className={primaryButton} onClick={() => void confirmReject()}>
-                                    Reject request
+                                    {cancellation ? 'Keep holiday' : 'Reject request'}
                                 </button>
                                 <button type="button" disabled={busy} className={secondaryButton} onClick={() => setRejecting(false)}>
                                     Keep pending

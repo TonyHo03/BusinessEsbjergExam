@@ -55,13 +55,24 @@ CREATE TABLE holiday_request (
                                  end_date         date NOT NULL,
                                  working_days     integer NOT NULL,
                                  hours            numeric(6,2) NOT NULL,
-                                 status           text NOT NULL CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')),
+                                 status           text NOT NULL CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Cancelled', 'CancellationRequested')),
                                  comment          text,
                                  rejection_reason text,
                                  decided_by       uuid REFERENCES employee(id),
                                  decided_at       timestamptz,
                                  created_at       timestamptz NOT NULL DEFAULT now(),
                                  CHECK (end_date >= start_date)
+);
+
+CREATE TABLE approval_audit (
+                                id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                                request_id  uuid NOT NULL REFERENCES holiday_request(id),
+                                actor_id    uuid NOT NULL REFERENCES employee(id),
+                                action      text NOT NULL CHECK (action IN ('Approve', 'Reject', 'Cancel', 'RequestCancellation')),
+                                from_status text NOT NULL,
+                                to_status   text NOT NULL,
+                                reason      text,
+                                occurred_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE transfer_request (

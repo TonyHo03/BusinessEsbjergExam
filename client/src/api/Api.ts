@@ -66,6 +66,7 @@ export enum RequestStatus {
   Approved = "Approved",
   Rejected = "Rejected",
   Cancelled = "Cancelled",
+  CancellationRequested = "CancellationRequested",
 }
 
 export enum HolidayAccount {
@@ -92,6 +93,7 @@ export interface PendingRequestDto {
   submittedAt?: string;
   note?: string | null;
   isOwnRequest?: boolean;
+  isCancellation?: boolean;
 }
 
 export interface DecisionResponseDto {
@@ -402,6 +404,11 @@ export interface ApprovalsRejectParams {
 }
 
 export interface ApprovalsCancelParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface ApprovalsRequestCancellationParams {
   /** @format guid */
   id: string;
 }
@@ -822,6 +829,24 @@ export class Api<
     ) =>
       this.request<DecisionResponseDto, any>({
         path: `/api/approvals/${id}/cancel`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Approvals
+     * @name ApprovalsRequestCancellation
+     * @request POST:/api/approvals/{id}/request-cancellation
+     */
+    approvalsRequestCancellation: (
+      { id }: ApprovalsRequestCancellationParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<DecisionResponseDto, any>({
+        path: `/api/approvals/${id}/request-cancellation`,
         method: "POST",
         format: "json",
         ...params,

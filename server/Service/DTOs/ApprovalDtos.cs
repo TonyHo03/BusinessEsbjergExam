@@ -19,7 +19,8 @@ public record PendingRequestDto(
     HolidayAccount Account,
     DateTimeOffset SubmittedAt,
     string? Note,
-    bool IsOwnRequest);
+    bool IsOwnRequest,
+    bool IsCancellation = false);
     
 public record RejectRequestDto([param: Required, StringLength(500)] string Reason);
 

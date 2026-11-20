@@ -7,7 +7,8 @@ public enum RequestStatus
     [MapValue("Pending")] Pending,
     [MapValue("Approved")] Approved,
     [MapValue("Rejected")] Rejected,
-    [MapValue("Cancelled")] Cancelled
+    [MapValue("Cancelled")] Cancelled,
+    [MapValue("CancellationRequested")] CancellationRequested
 }
 
 [Table("holiday_request")]
