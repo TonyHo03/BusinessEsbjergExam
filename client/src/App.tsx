@@ -28,13 +28,15 @@ export function App() {
                         <Route path={routes.myRequests} element={<MyRequestsView/>}/>
                         <Route path={routes.helpAndPolicies} element={<HelpPage/>}/>
 
-                        {/*<Route element={<RequireRole min={Roles.Accountant}/>}>
+                        <Route element={<RequireRole min={Roles.Accountant}/>}>
                             <Route path={routes.pendingApprovals} element={<PendingApprovalsPage/>}/>
+                            <Route path={routes.employeeOverview} element={<EmployeeOverviewView/>}/>
                         </Route>
 
                         <Route element={<RequireRole min={Roles.Admin}/>}>
                             <Route path={routes.userManagement} element={<UserManagementView/>}/>
-                        </Route>*/}
+                            <Route path={routes.parameters} element={<ParametersView/>}/>
+                        </Route>
 
                         <Route path={routes.pendingApprovals} element={<PendingApprovalsPage/>}/>
                         <Route path={routes.employeeOverview} element={<EmployeeOverviewView/>}/>

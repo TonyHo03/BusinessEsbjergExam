@@ -8,6 +8,7 @@ using Service.DTOs;
 namespace API.Controllers;
 
 [ApiController]
+[Authorize]
 public class TransfersController(TransferService transfers) : ControllerBase
 {
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
@@ -19,6 +20,9 @@ public class TransfersController(TransferService transfers) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TransferDto>> Create(TransferInput input)
     {
+        if (!User.CanAccess(input.EmployeeId))
+            return Forbid();
+
         var result = await transfers.CreateAsync(input, Today);
 
         if (result is null)
@@ -32,8 +36,13 @@ public class TransfersController(TransferService transfers) : ControllerBase
 
     /// <summary>En medarbejders overførsler, nyeste først.</summary>
     [HttpGet("employees/{employeeId:guid}/transfers")]
-    public async Task<ActionResult<IReadOnlyList<TransferDto>>> GetForEmployee(Guid employeeId) =>
-        Ok(await transfers.GetForEmployeeAsync(employeeId));
+    public async Task<ActionResult<IReadOnlyList<TransferDto>>> GetForEmployee(Guid employeeId)
+    {
+        if (!User.CanAccess(employeeId))
+            return Forbid();
+
+        return Ok(await transfers.GetForEmployeeAsync(employeeId));
+    }
 
     [HttpGet("api/transfers/pending"), Authorize(Policy = AccessPolicies.AccountingRights)]
     public async Task<ActionResult<IReadOnlyList<TransferDto>>> GetPending() =>

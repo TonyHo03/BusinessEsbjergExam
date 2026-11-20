@@ -1,32 +1,24 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router";
+import { useEffect } from "react";
 import { useAuth } from "@/components/authProvider";
-import { hasRole} from "@/lib/utils.ts";
-import type {Roles} from "@/api/Api.ts";
-import {useNavigate} from "react-router";
-import {useEffect} from "react";
-import * as React from "react";
+import { hasRole } from "@/lib/utils.ts";
+import type { Roles } from "@/api/Api.ts";
 
-export default function RequireRole({ min, children }: { min: Roles, children: React.ReactNode }) {
+/**
+ * Viser kun siderne under sig, hvis brugeren har mindst rollen `min`.
+ * Ellers sendes brugeren til dashboard. Det er kun for brugervenlighed –
+ * det er backend, der rent faktisk beskytter data.
+ */
+export default function RequireRole({ min }: { min: Roles }) {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
+    const allowed = !!user && hasRole(user.role, min);
 
     useEffect(() => {
-        // Vent med at vurdere før loade-processen er færdig
-        if (loading) return;
+        if (!loading && !allowed) navigate("/dashboard", { replace: true });
+    }, [loading, allowed, navigate]);
 
-        if (!user || !hasRole(user.role, min)) {
-            navigate("/dashboard", { replace: true });
-        }
-    }, [user, loading, min, navigate]);
-
-    // Vis en loader eller ingenting, imens auth-data hentes
-    if (loading) {
-        return <div>Indlæser...</div>; // Eller din egen loading-spinner
-    }
-
-    if (!user || !hasRole(user.role, min)) {
-        return null; // Undgå at vise indholdet mens navigate udføres
-    }
+    if (loading || !allowed) return null;
 
     return <Outlet />;
 }
