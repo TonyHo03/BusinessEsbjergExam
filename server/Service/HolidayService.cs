@@ -4,7 +4,6 @@ using LinqToDB.Async;
 
 namespace Service;
 
-/// <summary>En optjeningsperiode. Timer er omregnet med daglængden på AsOf. RemainingDays er saldoens egentlige værdi.</summary>
 public record BalanceDto(
     HolidayAccount Account,
     int EarningYear,
@@ -17,10 +16,6 @@ public record BalanceDto(
     ExpiryStatus Status,
     bool NeedsAction);
 
-/// <param name="AsOf">Datoen saldoen er beregnet for. Kan ligge i fremtiden.</param>
-/// <param name="AvailableWeeks1To5">Timer der kan bruges på datoen, minus ventende ansøgninger.</param>
-/// <param name="PendingWeeks1To5">Timer reserveret af ansøgninger, der venter på godkendelse.</param>
-/// <param name="DayLength">Timer pr. feriedag på AsOf (ugentlige timer / 5). Dage = timer / DayLength.</param>
 public record BalancesResponse(
     DateOnly AsOf,
     decimal DayLength,
@@ -30,13 +25,8 @@ public record BalancesResponse(
     decimal PendingWeek6,
     IReadOnlyList<BalanceDto> Periods);
 
-/// <summary>Henter data fra databasen og lader de rene klasser regne.</summary>
 public class HolidayService(AppDb db)
 {
-    /// <summary>
-    /// Saldi på en vilkårlig dato. En fremtidig dato giver en prognose:
-    /// optjening frem til datoen tæller med, og godkendt og ventende ferie er trukket fra.
-    /// </summary>
     public async Task<BalancesResponse?> GetBalancesAsync(Guid employeeId, DateOnly asOf)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);

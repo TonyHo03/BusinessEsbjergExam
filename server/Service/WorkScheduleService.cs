@@ -16,13 +16,10 @@ public record WorkScheduleDto(
     decimal WeeklyHours,
     bool IsCurrent);
 
-/// <param name="EmployeeStartDate">Bruges som standarddato til medarbejderens første skema.</param>
-/// <param name="Schedules">Alle skemaer, nyeste først.</param>
 public record WorkSchedulesResponse(DateOnly EmployeeStartDate, IReadOnlyList<WorkScheduleDto> Schedules);
 
 public record WorkScheduleResult(IReadOnlyList<string> Errors, WorkScheduleDto? Created);
 
-/// <summary>Arbejdsskemaer med historik. Et nyt skema afslutter det forrige og overskriver det aldrig.</summary>
 public class WorkScheduleService(AppDb db)
 {
     public async Task<WorkSchedulesResponse?> GetAsync(Guid employeeId, DateOnly today)
@@ -39,7 +36,6 @@ public class WorkScheduleService(AppDb db)
         return new WorkSchedulesResponse(employee.StartDate, schedules.Select(s => ToDto(s, today)).ToList());
     }
 
-    /// <returns>Null hvis medarbejderen ikke findes.</returns>
     public async Task<WorkScheduleResult?> AddAsync(Guid employeeId, WorkScheduleInput input, DateOnly today)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
@@ -69,8 +65,6 @@ public class WorkScheduleService(AppDb db)
         return new WorkScheduleResult([], ToDto(schedule, today));
     }
     
-    /// <summary>Sletter et kommende skema og lader det forrige gælde videre.</summary>
-    /// <returns>Null hvis slettet, ellers en fejlbesked. KeyNotFoundException hvis skemaet ikke findes.</returns>
     public async Task<string?> DeleteAsync(Guid employeeId, Guid scheduleId, DateOnly today)
     {
         var existing = await db.WorkSchedules.Where(s => s.EmployeeId == employeeId).ToListAsync();

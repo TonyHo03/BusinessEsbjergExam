@@ -33,13 +33,8 @@ public record RequestDto(
 
 public record SubmitResult(RequestPreview Preview, RequestDto? Created);
 
-/// <summary>
-/// Ferieansøgninger: beregn og valider (preview), gem (submit) og vis.
-/// Al validering sker her på serveren, uanset hvad klienten har tjekket.
-/// </summary>
 public class RequestService(AppDb db)
 {
-    /// <summary>Beregner og validerer uden at gemme. Null hvis medarbejderen ikke findes.</summary>
     public async Task<RequestPreview?> PreviewAsync(RequestInput input, DateOnly today)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == input.EmployeeId);
@@ -75,7 +70,6 @@ public class RequestService(AppDb db)
             validation.Issues);
     }
 
-    /// <summary>Gemmer ansøgningen som Pending, hvis den er gyldig. Null hvis medarbejderen ikke findes.</summary>
     public async Task<SubmitResult?> SubmitAsync(RequestInput input, DateOnly today)
     {
         var preview = await PreviewAsync(input, today);

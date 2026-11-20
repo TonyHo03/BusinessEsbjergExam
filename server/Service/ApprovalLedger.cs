@@ -2,11 +2,6 @@
 
 namespace Service;
 
-/// <summary>
-/// De ledger-poster, en beslutning giver. Ved godkendelse trækkes ferien fra saldoen,
-/// ældste periode først og med feriegæld (højst 1 uge, kun uge 1–5).
-/// Ved annullering af godkendt ferie modposteres de samme poster, så dagene kommer tilbage.
-/// </summary>
 public static class ApprovalLedger
 {
     private const decimal DebtLimitDays = 5m; // 1 uge

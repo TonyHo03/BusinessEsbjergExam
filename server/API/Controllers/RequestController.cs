@@ -14,7 +14,6 @@ public class RequestsController(RequestService requests) : ControllerBase
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
-    /// <summary>Beregner timer og validerer en ansøgning uden at gemme den.</summary>
     [HttpPost("preview")]
     [ProducesResponseType<RequestPreview>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -31,7 +30,6 @@ public class RequestsController(RequestService requests) : ControllerBase
         return preview is null ? NotFound() : Ok(preview);
     }
 
-    /// <summary>Sender en ansøgning. Gemmes som Pending, hvis den er gyldig.</summary>
     [HttpPost]
     [ProducesResponseType<RequestDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<RequestPreview>(StatusCodes.Status400BadRequest)]
@@ -55,7 +53,6 @@ public class RequestsController(RequestService requests) : ControllerBase
         return Created($"/requests/{result.Created.Id}", result.Created);
     }
 
-    /// <summary>En medarbejders ansøgninger, nyeste først.</summary>
     [HttpGet("/employees/{employeeId:guid}/requests")]
     public async Task<ActionResult<IReadOnlyList<RequestDto>>> GetForEmployee(Guid employeeId)
     {

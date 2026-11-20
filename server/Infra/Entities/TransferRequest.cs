@@ -2,10 +2,6 @@ using LinqToDB.Mapping;
 
 namespace Infra;
 
-/// <summary>
-/// Anmodning om at overføre uge 1–5-dage, der ellers udløber 31.12, til næste ferieår.
-/// Godkendes eller afvises af bogholderiet. Først ved godkendelse flyttes dagene i ledgeren.
-/// </summary>
 [Table("transfer_request")]
 public class TransferRequest
 {

@@ -13,7 +13,6 @@ public class TransfersController(TransferService transfers) : ControllerBase
 {
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
-    /// <summary>Anmod om at overføre uge 1–5-dage, der udløber 31.12, til næste ferieår.</summary>
     [HttpPost("transfers")]
     [ProducesResponseType<TransferDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<IReadOnlyList<string>>(StatusCodes.Status400BadRequest)]
@@ -34,7 +33,6 @@ public class TransfersController(TransferService transfers) : ControllerBase
         return Created($"/transfers/{result.Created.Id}", result.Created);
     }
 
-    /// <summary>En medarbejders overførsler, nyeste først.</summary>
     [HttpGet("employees/{employeeId:guid}/transfers")]
     public async Task<ActionResult<IReadOnlyList<TransferDto>>> GetForEmployee(Guid employeeId)
     {

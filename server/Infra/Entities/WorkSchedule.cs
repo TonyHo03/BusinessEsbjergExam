@@ -2,11 +2,6 @@ using LinqToDB.Mapping;
 
 namespace Infra;
 
-/// <summary>
-/// En medarbejders arbejdstider mandag–fredag i en periode.
-/// En dag uden tider (null) er ikke en arbejdsdag.
-/// Perioden løber fra EffectiveFrom til og med EffectiveTo (null = indtil videre).
-/// </summary>
 [Table("work_schedule")]
 public class WorkSchedule
 {
@@ -26,7 +21,6 @@ public class WorkSchedule
     [Column("fri_start")] public TimeOnly? FriStart { get; set; }
     [Column("fri_end")] public TimeOnly? FriEnd { get; set; }
 
-    /// <summary>Timer på en ugedag, beregnet ud fra fra- og til-tid. Weekender er altid 0.</summary>
     public decimal HoursFor(DayOfWeek day) => day switch
     {
         DayOfWeek.Monday => Hours(MonStart, MonEnd),
