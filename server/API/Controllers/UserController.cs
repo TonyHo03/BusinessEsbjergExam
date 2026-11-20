@@ -1,3 +1,4 @@
+using API.Security;
 using Infra;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AccessPolicies.AdminRights)]
 public class UserController(EmployeeService service)
 {
     

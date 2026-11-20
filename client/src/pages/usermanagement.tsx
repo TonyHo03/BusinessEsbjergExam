@@ -1,5 +1,5 @@
 import {Label} from "@/components/ui/label.tsx";
-import {Ban, Edit, UserPlus} from "lucide-react";
+import {Ban, CalendarClock, Edit, MoreHorizontal, UserPlus} from "lucide-react";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Card, CardContent} from "../components/ui/card.tsx";
 import {Input} from "@/components/ui/input.tsx";
@@ -29,16 +29,20 @@ import {
     DialogTitle
 } from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {WorkScheduleDialog} from "@/components/WorkScheduleDialog.tsx";
 
 
 export function UserManagementView() {
 
 
     const [employees, setEmployees] = useState<EmployeeDto[]>([])
+    const [search, setSearch] = useState<string>("");
+    const [roleFilter, setRoleFilter] = useState<Roles | null>(null);
     const [open, setOpen] = useState<boolean>(false);
     const [openEditing, setOpenEditing] = useState<boolean>(false);
 
     const [editingEmployee, setEditingEmployee] = useState<EmployeeDto | null>(null);
+    const [scheduleEmployee, setScheduleEmployee] = useState<EmployeeDto | null>(null);
 
 
     useEffect(() => {
@@ -46,6 +50,12 @@ export function UserManagementView() {
         api.api.userGetAllUsers().then(setEmployees).catch(err => console.log(err));
 
     }, []);
+
+    // Søg på navn eller email (uden forskel på store og små bogstaver) og filtrér på rolle
+    const term = search.trim().toLowerCase();
+    const filtered = employees.filter(e =>
+        (!term || e.name?.toLowerCase().includes(term) || e.email?.toLowerCase().includes(term)) &&
+        (!roleFilter || e.role === roleFilter));
 
     return (
         <div className="flex flex-col w-full h-full p-12 gap-4">
@@ -81,30 +91,32 @@ export function UserManagementView() {
             <Separator className="h-px"/>
             <div className="flex w-full">
                 <div className="flex flex-col gap-2">
-                    <Label>Find a user:</Label>
-                    <Input className="bg-card!" placeholder="Search after name or email..."/>
+                    <Label htmlFor="search">Find a user:</Label>
+                    <Input id="search" className="bg-card! w-72" placeholder="Search by name or email..."
+                           value={search} onChange={e => setSearch(e.target.value)}/>
                 </div>
                 <div className="flex flex-col gap-2 ml-auto">
                     <Label>Role:</Label>
-                    <Select>
+                    <Select value={roleFilter} onValueChange={v => setRoleFilter((v as Roles) ?? null)}>
                         <SelectTrigger>
                             <SelectValue className="pr-12" placeholder={"All Roles"}/>
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value={null}>All Roles</SelectItem>
-                            {Object.values(Roles).map(r => <SelectItem value={r}>{r}</SelectItem>)}
+                            {Object.values(Roles).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
             </div>
-            <UserTable employees={employees} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing}/>
+            <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing} setScheduleEmployee={setScheduleEmployee}/>
             <CreateEmployeeDialog open={open} setOpen={setOpen}/>
+            <WorkScheduleDialog employee={scheduleEmployee} onClose={() => setScheduleEmployee(null)}/>
             <UpdateEmployeeDialog open={openEditing} setOpen={setOpenEditing} editingEmployee={editingEmployee} setEditingEmployee={setEditingEmployee}/>
         </div>
     );
 }
 
-function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: EmployeeDto[], setEditingEmployee: (editingEmployee: EmployeeDto | null) => void, setOpenEditing: (openEditing: boolean) => void}) {
+function UserTable({employees, setEditingEmployee, setOpenEditing, setScheduleEmployee}: {employees: EmployeeDto[], setEditingEmployee: (editingEmployee: EmployeeDto | null) => void, setOpenEditing: (openEditing: boolean) => void, setScheduleEmployee: (employee: EmployeeDto) => void}) {
 
     const handleDeactivate = (id: string) => {
         api.api.userDeactivateUser({id: id}).then(() => window.location.reload()).catch(err => console.log(err));
@@ -128,11 +140,18 @@ function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: 
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-right">
+                            <span className="sr-only">Actions</span>
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody className="[&_td]:py-4 [&_td]:text-[#023459]">
-                    {employees.sort((a, b) => a.name!.localeCompare(b.name!)).map(e => (
+                    {employees.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground">No users match your search.</TableCell>
+                        </TableRow>
+                    )}
+                    {[...employees].sort((a, b) => a.name!.localeCompare(b.name!)).map(e => (
                         <TableRow key={e.id}>
                             <TableCell>
                                 <div className="flex items-center gap-3">
@@ -151,12 +170,20 @@ function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: 
                             <TableCell>
                                 <Badge className={statusStyles[e.status!]}>{e.status}</Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-right">
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger render={<button className="font-bold">Manage ...</button>}/>
+                                    <DropdownMenuTrigger render={
+                                                              <button type="button" aria-label={`Manage ${e.name}`}
+                                                                      className="inline-flex size-9 items-center justify-center rounded-lg text-[#023459] hover:bg-muted">
+                                                                 <MoreHorizontal className="size-5"/>
+                                                             </button>
+                                                         }/>
                                     <DropdownMenuContent className="w-45">
                                         <DropdownMenuItem onClick={() => {setEditingEmployee(e); setOpenEditing(true)}}>
                                             <Edit/> Edit Employee
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setScheduleEmployee(e)}>
+                                            <CalendarClock/> Work schedule
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         {e.status === Status.Active && <DropdownMenuItem onClick={() => handleDeactivate(e.id!)}>
@@ -181,16 +208,26 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
     const [name, setName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [role, setRole] = useState<Roles | null>(null)
+    const [role, setRole] = useState<Roles>(Roles.Employee);
+    const [startDate, setStartDate] = useState<string>(new Date().toLocaleDateString("sv-SE")); // YYYY-MM-DD i lokal tid
 
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>()
 
-    const handleSubmit = async () => {
-
-        await api.api.userCreateUser({name: name, email: email, password: password, role: role!});
-        window.location.reload();
-
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault(); // ellers genindlæser browseren siden, før kaldet er sendt
+        setSubmitting(true);
+        setError(null);
+        try {
+            await api.api.userCreateUser({name, email, password, role, startDate});
+            window.location.reload();
+        } catch (err: any) {
+            // API'et sender { title: "..." } – læs den, hvis den er der
+            const problem = await err?.json?.().catch(() => null);
+            setError(problem?.title ?? "Could not create the employee. Check the details and try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     return (
@@ -215,9 +252,13 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
                         <Select value={role} onValueChange={v => v && setRole(v as Roles)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {Object.values(Roles).map(r => <SelectItem value={r}>{r}</SelectItem>)}
+                                {Object.values(Roles).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="startDate">Start date</Label>
+                        <Input id="startDate" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="password">Temporary password</Label>
@@ -246,9 +287,18 @@ function UpdateEmployeeDialog({open, setOpen, editingEmployee, setEditingEmploye
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>()
 
-    const handleSubmit = async () => {
-        await api.api.userUpdateUser({id: editingEmployee?.id!}, {name: name, email: email, role: role!});
-        window.location.reload();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError(null);
+        try {
+            await api.api.userUpdateUser({id: editingEmployee?.id!}, {name: name, email: email, role: role!});
+            window.location.reload();
+        } catch {
+            setError("Could not save the changes. Try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     useEffect(() => {
@@ -275,18 +325,18 @@ function UpdateEmployeeDialog({open, setOpen, editingEmployee, setEditingEmploye
                 <form onSubmit={handleSubmit} className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" defaultValue={editingEmployee?.name} value={name} onChange={e => setName(e.target.value)} required />
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue={editingEmployee?.email} value={email} onChange={e => setEmail(e.target.value)} required />
+                        <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label>Role</Label>
-                        <Select defaultValue={editingEmployee?.role} value={role} onValueChange={v => v && setRole(v as Roles)}>
+                        <Select value={role} onValueChange={v => v && setRole(v as Roles)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {Object.values(Roles).map(r => <SelectItem value={r}>{r}</SelectItem>)}
+                                {Object.values(Roles).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
 using Testcontainers.PostgreSql;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.Integration;
 
@@ -48,6 +51,17 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:Key", "test-key-der-kun-bruges-i-integrationstestene-1234");
         builder.UseSetting("Jwt:Issuer", "Test");
         builder.UseSetting("Jwt:Audience", "Test");
+
+        // Testene logger ind via TestAuthHandler i stedet for en JWT-cookie
+        builder.ConfigureTestServices(services =>
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = TestAuthHandler.SchemeName;
+                    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                    options.DefaultForbidScheme = TestAuthHandler.SchemeName;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { }));
     }
 
     async Task IAsyncLifetime.DisposeAsync()

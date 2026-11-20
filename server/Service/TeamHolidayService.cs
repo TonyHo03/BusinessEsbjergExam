@@ -13,8 +13,10 @@ public class TeamHolidayService(AppDb db)
             .Where(e => e.StartDate <= to && (e.EndDate == null || e.EndDate >= from))
             .ToListAsync();
 
+        // Ferie med en åben annulleringsanmodning er stadig godkendt, indtil bogholderiet har svaret
         var requests = await db.HolidayRequests
-            .Where(r => r.Status == RequestStatus.Approved && r.StartDate <= to && r.EndDate >= from)
+            .Where(r => (r.Status == RequestStatus.Approved || r.Status == RequestStatus.CancellationRequested)
+                        && r.StartDate <= to && r.EndDate >= from)
             .ToListAsync();
 
         var daysOff = await db.DaysOff

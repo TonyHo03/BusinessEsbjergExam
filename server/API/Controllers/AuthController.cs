@@ -35,7 +35,7 @@ public class AuthController(EmployeeService employeeService, JwtTokenService jwt
         return Ok(user);
     }
 
-    [HttpGet("logout")]
+    [HttpPost("logout")]
     public IActionResult Logout()
     {
         HttpContext.Response.Cookies.Delete(CookieName, new CookieOptions
@@ -46,7 +46,7 @@ public class AuthController(EmployeeService employeeService, JwtTokenService jwt
         return NoContent();
     }
     
-    [HttpGet("me")]
+    [HttpGet("me"), Authorize]
     public ActionResult<CurrentLoggedUser> Me()
     {
 

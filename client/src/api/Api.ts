@@ -10,18 +10,6 @@
  * ---------------------------------------------------------------
  */
 
-export enum Status {
-  Active = "Active",
-  Inactive = "Inactive",
-}
-
-export enum RequestStatus {
-  Pending = "Pending",
-  Approved = "Approved",
-  Rejected = "Rejected",
-  Cancelled = "Cancelled",
-}
-
 export enum IssueSeverity {
   Error = "Error",
   Warning = "Warning",
@@ -32,6 +20,8 @@ export enum IssueCode {
   StartInPast = "StartInPast",
   NotEnoughNotice = "NotEnoughNotice",
   InsufficientBalance = "InsufficientBalance",
+  UsesHolidayDebt = "UsesHolidayDebt",
+  NegativeOn31August = "NegativeOn31August",
   ShortBlock = "ShortBlock",
 }
 
@@ -41,6 +31,23 @@ export enum DayKind {
   DayOff = "DayOff",
 }
 
+export enum ParameterVersionStatus {
+  Past = "Past",
+  Current = "Current",
+  Upcoming = "Upcoming",
+}
+
+export enum ParameterKind {
+  Decimal = "Decimal",
+  Integer = "Integer",
+  Boolean = "Boolean",
+}
+
+export enum Status {
+  Active = "Active",
+  Inactive = "Inactive",
+}
+
 export enum ExpiryStatus {
   NotYetUsable = "NotYetUsable",
   Active = "Active",
@@ -48,15 +55,55 @@ export enum ExpiryStatus {
   Expired = "Expired",
 }
 
+export enum Roles {
+  Employee = "Employee",
+  Accountant = "Accountant",
+  Admin = "Admin",
+}
+
+export enum RequestStatus {
+  Pending = "Pending",
+  Approved = "Approved",
+  Rejected = "Rejected",
+  Cancelled = "Cancelled",
+  CancellationRequested = "CancellationRequested",
+}
+
 export enum HolidayAccount {
   Weeks1To5 = "Weeks1To5",
   Week6 = "Week6",
 }
 
-export enum Roles {
-  Employee = "Employee",
-  Accountant = "Accountant",
-  Admin = "Admin",
+export interface PendingRequestDto {
+  /** @format guid */
+  requestId?: string;
+  /** @format guid */
+  employeeId?: string;
+  employeeName?: string;
+  /** @format date */
+  startDate?: string;
+  /** @format date */
+  endDate?: string;
+  /** @format int32 */
+  workingDays?: number;
+  /** @format decimal */
+  hours?: number;
+  account?: HolidayAccount;
+  /** @format date-time */
+  submittedAt?: string;
+  note?: string | null;
+  isOwnRequest?: boolean;
+  isCancellation?: boolean;
+}
+
+export interface DecisionResponseDto {
+  /** @format guid */
+  requestId?: string;
+  status?: RequestStatus;
+}
+
+export interface RejectRequestDto {
+  reason?: string;
 }
 
 export interface LoginRequest {
@@ -76,9 +123,15 @@ export interface BalancesResponse {
   /** @format date */
   asOf?: string;
   /** @format decimal */
+  dayLength?: number;
+  /** @format decimal */
   availableWeeks1To5?: number;
   /** @format decimal */
   availableWeek6?: number;
+  /** @format decimal */
+  pendingWeeks1To5?: number;
+  /** @format decimal */
+  pendingWeek6?: number;
   periods?: BalanceDto[];
 }
 
@@ -92,12 +145,62 @@ export interface BalanceDto {
   used?: number;
   /** @format decimal */
   remaining?: number;
+  /** @format decimal */
+  remainingDays?: number;
   /** @format date */
   usableFrom?: string;
   /** @format date */
   expiresOn?: string;
   status?: ExpiryStatus;
   needsAction?: boolean;
+}
+
+export interface EmployeeOverviewRow {
+  /** @format guid */
+  employeeId?: string;
+  name?: string;
+  email?: string;
+  role?: Roles;
+  status?: Status;
+  hasSchedule?: boolean;
+  /** @format decimal */
+  dayLength?: number | null;
+  /** @format decimal */
+  availableWeeks1To5?: number | null;
+  /** @format decimal */
+  availableWeek6?: number | null;
+  /** @format decimal */
+  pendingHours?: number;
+  /** @format decimal */
+  expiringHours?: number | null;
+  /** @format date */
+  expiresOn?: string | null;
+}
+
+export interface ParameterDto {
+  key?: string;
+  description?: string;
+  kind?: ParameterKind;
+  currentValue?: string | null;
+  /** @format date */
+  currentFrom?: string | null;
+  versions?: ParameterVersionDto[];
+}
+
+export interface ParameterVersionDto {
+  /** @format guid */
+  id?: string;
+  value?: string;
+  /** @format date */
+  effectiveFrom?: string;
+  status?: ParameterVersionStatus;
+}
+
+export interface ParameterInput {
+  key?: string;
+  value?: string;
+  /** @format date */
+  effectiveFrom?: string;
 }
 
 export interface RequestPreview {
@@ -163,6 +266,65 @@ export interface RequestDto {
   createdAt?: string;
 }
 
+export interface TeamCalendarResponse {
+  /** @format date */
+  from?: string;
+  /** @format date */
+  to?: string;
+  members?: TeamMember[];
+  days?: TeamDay[];
+}
+
+export interface TeamMember {
+  /** @format guid */
+  employeeId?: string;
+  name?: string;
+  absences?: TeamAbsence[];
+}
+
+export interface TeamAbsence {
+  /** @format date */
+  startDate?: string;
+  /** @format date */
+  endDate?: string;
+}
+
+export interface TeamDay {
+  /** @format date */
+  date?: string;
+  isWorkingDay?: boolean;
+  /** @format int32 */
+  absent?: number;
+  /** @format int32 */
+  present?: number;
+}
+
+export interface TransferDto {
+  /** @format guid */
+  id?: string;
+  /** @format guid */
+  employeeId?: string;
+  /** @format int32 */
+  fromEarningYear?: number;
+  /** @format decimal */
+  days?: number;
+  status?: RequestStatus;
+  comment?: string | null;
+  rejectionReason?: string | null;
+  /** @format date-time */
+  createdAt?: string;
+}
+
+export interface TransferInput {
+  /** @format guid */
+  employeeId?: string;
+  /** @format int32 */
+  fromEarningYear?: number;
+  /** @format decimal */
+  days?: number;
+  comment?: string | null;
+}
+
 export interface EmployeeDto {
   /** @format guid */
   id?: string;
@@ -193,14 +355,111 @@ export interface UpdateEmployeeRequest {
   role?: Roles;
 }
 
+export interface WorkSchedulesResponse {
+  /** @format date */
+  employeeStartDate?: string;
+  schedules?: WorkScheduleDto[];
+}
+
+export interface WorkScheduleDto {
+  /** @format guid */
+  id?: string;
+  /** @format date */
+  effectiveFrom?: string;
+  /** @format date */
+  effectiveTo?: string | null;
+  monday?: DayTimes;
+  tuesday?: DayTimes;
+  wednesday?: DayTimes;
+  thursday?: DayTimes;
+  friday?: DayTimes;
+  /** @format decimal */
+  weeklyHours?: number;
+  isCurrent?: boolean;
+}
+
+export interface DayTimes {
+  start?: string | null;
+  end?: string | null;
+}
+
+export interface WorkScheduleInput {
+  /** @format date */
+  effectiveFrom?: string;
+  monday?: DayTimes;
+  tuesday?: DayTimes;
+  wednesday?: DayTimes;
+  thursday?: DayTimes;
+  friday?: DayTimes;
+}
+
+export interface ApprovalsApproveParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface ApprovalsRejectParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface ApprovalsCancelParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface ApprovalsRequestCancellationParams {
+  /** @format guid */
+  id: string;
+}
+
 export interface BalancesGetParams {
+  /** @format date */
+  asOf?: string | null;
   /** @format guid */
   employeeId: string;
+}
+
+export interface EmployeeOverviewGetParams {
+  /** @format date */
+  asOf?: string | null;
+}
+
+export interface ParametersGetParams {
+  /** @format date */
+  asOf?: string | null;
+}
+
+export interface ParametersDeleteParams {
+  /** @format guid */
+  id: string;
 }
 
 export interface RequestsGetForEmployeeParams {
   /** @format guid */
   employeeId: string;
+}
+
+export interface TeamHolidaysGetParams {
+  /** @format date */
+  from?: string;
+  /** @format date */
+  to?: string;
+}
+
+export interface TransfersGetForEmployeeParams {
+  /** @format guid */
+  employeeId: string;
+}
+
+export interface TransfersApproveParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface TransfersRejectParams {
+  /** @format guid */
+  id: string;
 }
 
 export interface UserGetUserByEmailParams {
@@ -218,6 +477,23 @@ export interface UserActivateUserParams {
 }
 
 export interface UserDeactivateUserParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface WorkSchedulesGetParams {
+  /** @format guid */
+  employeeId: string;
+}
+
+export interface WorkSchedulesAddParams {
+  /** @format guid */
+  employeeId: string;
+}
+
+export interface WorkSchedulesDeleteParams {
+  /** @format guid */
+  employeeId: string;
   /** @format guid */
   id: string;
 }
@@ -489,6 +765,96 @@ export class Api<
     /**
      * No description
      *
+     * @tags Approvals
+     * @name ApprovalsGetPending
+     * @request GET:/api/approvals/pending
+     */
+    approvalsGetPending: (params: RequestParams = {}) =>
+      this.request<PendingRequestDto[], any>({
+        path: `/api/approvals/pending`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Approvals
+     * @name ApprovalsApprove
+     * @request POST:/api/approvals/{id}/approve
+     */
+    approvalsApprove: (
+      { id }: ApprovalsApproveParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<DecisionResponseDto, any>({
+        path: `/api/approvals/${id}/approve`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Approvals
+     * @name ApprovalsReject
+     * @request POST:/api/approvals/{id}/reject
+     */
+    approvalsReject: (
+      { id }: ApprovalsRejectParams,
+      data: RejectRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<DecisionResponseDto, any>({
+        path: `/api/approvals/${id}/reject`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Approvals
+     * @name ApprovalsCancel
+     * @request POST:/api/approvals/{id}/cancel
+     */
+    approvalsCancel: (
+      { id }: ApprovalsCancelParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<DecisionResponseDto, any>({
+        path: `/api/approvals/${id}/cancel`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Approvals
+     * @name ApprovalsRequestCancellation
+     * @request POST:/api/approvals/{id}/request-cancellation
+     */
+    approvalsRequestCancellation: (
+      { id }: ApprovalsRequestCancellationParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<DecisionResponseDto, any>({
+        path: `/api/approvals/${id}/request-cancellation`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Auth
      * @name AuthLogin
      * @request POST:/api/Auth/login
@@ -507,12 +873,12 @@ export class Api<
      *
      * @tags Auth
      * @name AuthLogout
-     * @request GET:/api/Auth/logout
+     * @request POST:/api/Auth/logout
      */
     authLogout: (params: RequestParams = {}) =>
       this.request<Blob, any>({
         path: `/api/Auth/logout`,
-        method: "GET",
+        method: "POST",
         ...params,
       }),
 
@@ -539,13 +905,86 @@ export class Api<
      * @request GET:/api/employees/{employeeId}/balances
      */
     balancesGet: (
-      { employeeId }: BalancesGetParams,
+      { employeeId, ...query }: BalancesGetParams,
       params: RequestParams = {},
     ) =>
       this.request<BalancesResponse, any>({
         path: `/api/employees/${employeeId}/balances`,
         method: "GET",
+        query: query,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmployeeOverview
+     * @name EmployeeOverviewGet
+     * @request GET:/api/employees/overview
+     */
+    employeeOverviewGet: (
+      query: EmployeeOverviewGetParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<EmployeeOverviewRow[], any>({
+        path: `/api/employees/overview`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Parameters
+     * @name ParametersGet
+     * @request GET:/api/parameters
+     */
+    parametersGet: (
+      query: ParametersGetParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<ParameterDto[], any>({
+        path: `/api/parameters`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Parameters
+     * @name ParametersAdd
+     * @request POST:/api/parameters
+     */
+    parametersAdd: (data: ParameterInput, params: RequestParams = {}) =>
+      this.request<ParameterVersionDto, string[]>({
+        path: `/api/parameters`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Parameters
+     * @name ParametersDelete
+     * @request DELETE:/api/parameters/{id}
+     */
+    parametersDelete: (
+      { id }: ParametersDeleteParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<Blob, any>({
+        path: `/api/parameters/${id}`,
+        method: "DELETE",
         ...params,
       }),
 
@@ -576,6 +1015,60 @@ export class Api<
     requestsSubmit: (data: RequestInput, params: RequestParams = {}) =>
       this.request<RequestDto, RequestPreview | ProblemDetails>({
         path: `/api/requests`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Transfers
+     * @name TransfersGetPending
+     * @request GET:/api/transfers/pending
+     */
+    transfersGetPending: (params: RequestParams = {}) =>
+      this.request<TransferDto[], any>({
+        path: `/api/transfers/pending`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Transfers
+     * @name TransfersApprove
+     * @request POST:/api/transfers/{id}/approve
+     */
+    transfersApprove: (
+      { id }: TransfersApproveParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<TransferDto, any>({
+        path: `/api/transfers/${id}/approve`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Transfers
+     * @name TransfersReject
+     * @request POST:/api/transfers/{id}/reject
+     */
+    transfersReject: (
+      { id }: TransfersRejectParams,
+      data: RejectRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<TransferDto, any>({
+        path: `/api/transfers/${id}/reject`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -685,6 +1178,62 @@ export class Api<
         method: "POST",
         ...params,
       }),
+
+    /**
+     * No description
+     *
+     * @tags WorkSchedules
+     * @name WorkSchedulesGet
+     * @request GET:/api/employees/{employeeId}/schedules
+     */
+    workSchedulesGet: (
+      { employeeId }: WorkSchedulesGetParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<WorkSchedulesResponse, any>({
+        path: `/api/employees/${employeeId}/schedules`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WorkSchedules
+     * @name WorkSchedulesAdd
+     * @request POST:/api/employees/{employeeId}/schedules
+     */
+    workSchedulesAdd: (
+      { employeeId }: WorkSchedulesAddParams,
+      data: WorkScheduleInput,
+      params: RequestParams = {},
+    ) =>
+      this.request<WorkScheduleDto, string[] | ProblemDetails>({
+        path: `/api/employees/${employeeId}/schedules`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WorkSchedules
+     * @name WorkSchedulesDelete
+     * @request DELETE:/api/employees/{employeeId}/schedules/{id}
+     */
+    workSchedulesDelete: (
+      { employeeId, id }: WorkSchedulesDeleteParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, ProblemDetails | string>({
+        path: `/api/employees/${employeeId}/schedules/${id}`,
+        method: "DELETE",
+        ...params,
+      }),
   };
   employees = {
     /**
@@ -701,6 +1250,62 @@ export class Api<
       this.request<RequestDto[], any>({
         path: `/employees/${employeeId}/requests`,
         method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Transfers
+     * @name TransfersGetForEmployee
+     * @request GET:/employees/{employeeId}/transfers
+     */
+    transfersGetForEmployee: (
+      { employeeId }: TransfersGetForEmployeeParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<TransferDto[], any>({
+        path: `/employees/${employeeId}/transfers`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+  };
+  teamHolidays = {
+    /**
+     * No description
+     *
+     * @tags TeamHolidays
+     * @name TeamHolidaysGet
+     * @request GET:/team-holidays
+     */
+    teamHolidaysGet: (
+      query: TeamHolidaysGetParams = {},
+      params: RequestParams = {},
+    ) =>
+      this.request<TeamCalendarResponse, ProblemDetails>({
+        path: `/team-holidays`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+  };
+  transfers = {
+    /**
+     * No description
+     *
+     * @tags Transfers
+     * @name TransfersCreate
+     * @request POST:/transfers
+     */
+    transfersCreate: (data: TransferInput, params: RequestParams = {}) =>
+      this.request<TransferDto, string[] | ProblemDetails>({
+        path: `/transfers`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

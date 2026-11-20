@@ -9,7 +9,7 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
     {
         var query = from request in db.HolidayRequests
             join employee in db.Employees on request.EmployeeId equals employee.Id
-            where request.Status == RequestStatus.Pending
+            where request.Status == RequestStatus.Pending || request.Status == RequestStatus.CancellationRequested
             orderby request.CreatedAt
             select new HolidayRequestSnapshot(
                 request.Id,
@@ -26,35 +26,44 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
         return await query.ToListAsync(ct);
     }
 
+    public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken ct)
+    {
+        var query = from request in db.HolidayRequests
+            join employee in db.Employees on request.EmployeeId equals employee.Id
+            where request.Id == id
+            select new HolidayRequestSnapshot(
+                request.Id,
+                request.EmployeeId, employee.Name,
+                request.Status,
+                request.StartDate,
+                request.EndDate,
+                request.WorkingDays,
+                request.Hours,
+                request.Account,
+                request.CreatedAt,
+                request.Comment
+            );
+        return await query.FirstOrDefaultAsync(ct);
+    }
 
-public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken ct)
-{
-    var query = from request in db.HolidayRequests
-        join employee in db.Employees on request.EmployeeId equals employee.Id
-        where request.Id == id
-        select new HolidayRequestSnapshot(
-            request.Id,
-            request.EmployeeId, employee.Name,
-            request.Status,
-            request.StartDate,
-            request.EndDate,
-            request.WorkingDays,
-            request.Hours,
-            request.Account,
-            request.CreatedAt,
-            request.Comment
-        );
-    return await  query.FirstOrDefaultAsync(ct);
-}
+    public async Task<LedgerData> GetLedgerDataAsync(Guid employeeId, CancellationToken ct) =>
+        new(
+            await db.Employees.FirstAsync(e => e.Id == employeeId, ct),
+            await db.WorkSchedules.Where(s => s.EmployeeId == employeeId).ToListAsync(ct),
+            await db.LedgerEntries.Where(e => e.EmployeeId == employeeId).ToListAsync(ct),
+            await db.RuleParameters.ToListAsync(ct));
 
     public async Task<bool> TrySaveDecisionAsync(Guid requestId, RequestStatus expected, RequestStatus next, ApprovalAudit audit,
-        CancellationToken ct)
+        IReadOnlyList<LedgerEntry> ledgerEntries, CancellationToken ct)
     {
         await using var transaction = db.BeginTransaction();
 
+        // Begrundelsen gemmes ved afvisning – også når en annullering afvises, så medarbejderen kan se hvorfor
+        var reason = audit.Action == RequestAction.Reject ? audit.Reason : null;
+
         var updated = await db.HolidayRequests.Where(request => request.Id == requestId && request.Status == expected)
-            .Set(request => request.Status, next).Set(request => request.RejectionReason,
-                next == RequestStatus.Rejected ? audit.Reason : null)
+            .Set(request => request.Status, next)
+            .Set(request => request.RejectionReason, reason)
             .Set(request => request.DecidedBy, audit.ActorId)
             .Set(request => request.DecidedAt, audit.OccurredAt).UpdateAsync(ct);
 
@@ -65,7 +74,10 @@ public async Task<HolidayRequestSnapshot?> GetAsync(Guid id, CancellationToken c
         }
 
         await db.InsertAsync(audit, token: ct);
-        
+
+        foreach (var entry in ledgerEntries)
+            await db.InsertAsync(entry, token: ct);
+
         transaction.Commit();
         return true;
     }
