@@ -1,7 +1,7 @@
 import {Label} from "../components/ui/label.tsx";
 import {Input} from "../components/ui/input.tsx";
 import {ArrowRight} from "lucide-react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {api} from "../api/client.ts";
 import {useAuth} from "@/components/authProvider.tsx";
 import {useNavigate} from "react-router";
@@ -11,24 +11,27 @@ export function LoginView() {
 
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
+    const [logging, setLogging] = useState<boolean>(false);
     const {user, refresh} = useAuth();
     const navigate = useNavigate();
 
+    useEffect(() => {
+        setLogging(false);
+    }, []);
 
     const handleLogin = async () => {
+        if (logging) return;
+
+        setLogging(true);
         try {
-            await api.api.authLogin({email: email, password: password});
-            await refresh();
-        }
-        catch (err) {
+            await api.api.authLogin({ email, password });
+            const me = await refresh();
+            if (me) navigate("/dashboard", { replace: true });
+        } catch (err) {
             console.log(err);
+            setLogging(false);
         }
-        finally {
-            if (user?.id != null) {
-                navigate("/dashboard");
-            }
-        }
-    }
+    };
 
     return (
         <div className="flex w-screen h-full bg-transparent">

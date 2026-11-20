@@ -1,12 +1,12 @@
 // auth/AuthProvider.tsx
-import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
+import {createContext, type ReactNode, useCallback, useContext, useEffect, useState} from "react";
 import {api} from "../api/client.ts";
 import {type CurrentLoggedUser, Roles} from "../api/Api.ts";
 
 type AuthContextValue = {
     user: CurrentLoggedUser | null;
     loading: boolean;
-    refresh: () => Promise<void>;
+    refresh: () => Promise<CurrentLoggedUser | null>;
     logout: () => void;
 };
 
@@ -16,16 +16,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<CurrentLoggedUser | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const refresh = async () => {
+    const refresh = useCallback(async () => {
         try {
             const me = await api.api.authMe();
-            console.log("raw /auth/me:", me);
             setUser(me);
-        } catch (err) {
-            console.error("refresh failed:", err);
+            return me;
+        } catch {
             setUser(null);
+            return null;
         }
-    };
+    }, []);
 
     const logout = () => {
         localStorage.removeItem("token");

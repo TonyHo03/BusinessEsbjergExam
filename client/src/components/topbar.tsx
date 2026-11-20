@@ -33,7 +33,7 @@ export function Topbar() {
     const segments = pathname.split("/").filter(Boolean);
 
     return (
-        <header className="flex h-[72px] shrink-0 items-center justify-between gap-4 border-b border-line bg-white px-6 md:px-10">
+        <header className="flex sticky top-0 h-[72px] shrink-0 items-center justify-between gap-4 border-b border-line bg-white px-6 md:px-10">
             <div className="flex items-center">
                 <p className="text-sm text-foreground mr-1">Holiday Planner /</p>
                 <Breadcrumb>
