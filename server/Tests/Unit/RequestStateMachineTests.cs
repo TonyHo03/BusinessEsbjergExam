@@ -127,4 +127,55 @@ public class RequestStateMachineTests
         Assert.False(result.IsAllowed);
         Assert.Equal(status, result.NewStatus);
     }
+    [Fact]
+    public void RequestCancellation_ApprovedByOwnerBeforeStart_Succeeds()
+    {
+        var result = RequestStateMachine.Apply(RequestStatus.Approved, RequestAction.RequestCancellation, Ctx(owner: true));
+
+        Assert.True(result.IsAllowed);
+        Assert.Equal(RequestStatus.CancellationRequested, result.NewStatus);
+    }
+
+    [Fact]
+    public void RequestCancellation_BySomeoneElse_IsDenied()
+    {
+        var result = RequestStateMachine.Apply(RequestStatus.Approved, RequestAction.RequestCancellation, Ctx(accountingRights: true));
+
+        Assert.False(result.IsAllowed);
+    }
+
+    [Fact]
+    public void RequestCancellation_AfterStart_IsDenied()
+    {
+        var result = RequestStateMachine.Apply(RequestStatus.Approved, RequestAction.RequestCancellation, Ctx(owner: true, start: Today));
+
+        Assert.False(result.IsAllowed);
+    }
+
+    [Fact]
+    public void ApproveCancellation_ByAccounting_Cancels()
+    {
+        var result = RequestStateMachine.Apply(RequestStatus.CancellationRequested, RequestAction.Approve, Ctx(accountingRights: true));
+
+        Assert.True(result.IsAllowed);
+        Assert.Equal(RequestStatus.Cancelled, result.NewStatus);
+    }
+
+    [Fact]
+    public void RejectCancellation_WithReason_KeepsHolidayApproved()
+    {
+        var result = RequestStateMachine.Apply(
+            RequestStatus.CancellationRequested, RequestAction.Reject, Ctx(accountingRights: true, reason: "We have planned around it."));
+
+        Assert.True(result.IsAllowed);
+        Assert.Equal(RequestStatus.Approved, result.NewStatus);
+    }
+
+    [Fact]
+    public void DecideCancellation_ByNonAccounting_IsDenied()
+    {
+        var result = RequestStateMachine.Apply(RequestStatus.CancellationRequested, RequestAction.Approve, Ctx(owner: true));
+
+        Assert.False(result.IsAllowed);
+    }
 }

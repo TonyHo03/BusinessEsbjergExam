@@ -38,8 +38,10 @@ public static class TeamCalendar
             .OrderBy(e => e.Name)
             .ToList();
 
+        // Ferie med en åben annulleringsanmodning er stadig godkendt, indtil bogholderiet har svaret
         var approved = requests
-            .Where(r => r.Status == RequestStatus.Approved && r.StartDate <= to && r.EndDate >= from)
+            .Where(r => (r.Status == RequestStatus.Approved || r.Status == RequestStatus.CancellationRequested)
+                        && r.StartDate <= to && r.EndDate >= from)
             .ToList();
 
         var members = employed

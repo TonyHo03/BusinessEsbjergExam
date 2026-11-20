@@ -25,19 +25,20 @@ public class ApprovalService(
         Guid? currentEmployeeId,
         CancellationToken ct) =>
         (await repository.ListPendingAsync(ct))
-            .Select(r => new PendingRequestDto(
-                r.Id,
-                r.EmployeeId,
-                r.EmployeeName,
-                r.StartDate,
-                r.EndDate,
-                r.WorkingDays,
-                r.Hours,
-                r.Account,
-                r.SubmittedAt,
-                r.Note,
-                IsOwnRequest: currentEmployeeId == r.EmployeeId))
-            .ToList();
+        .Select(r => new PendingRequestDto(
+            r.Id,
+            r.EmployeeId,
+            r.EmployeeName,
+            r.StartDate,
+            r.EndDate,
+            r.WorkingDays,
+            r.Hours,
+            r.Account,
+            r.SubmittedAt,
+            r.Note,
+            IsOwnRequest: currentEmployeeId == r.EmployeeId,
+            IsCancellation: r.Status == RequestStatus.CancellationRequested))
+        .ToList();
 
     public async Task<DecisionResult> DecideAsync(
         Guid requestId,
@@ -68,8 +69,9 @@ public class ApprovalService(
         
         // Godkendt ferie trækkes fra saldoen. Annulleres godkendt ferie, lægges den tilbage
         IReadOnlyList<LedgerEntry> ledgerEntries = [];
-        var approving = transition.NewStatus == RequestStatus.Approved;
-        var cancellingApproved = request.Status == RequestStatus.Approved && transition.NewStatus == RequestStatus.Cancelled;
+        var approving = request.Status == RequestStatus.Pending && transition.NewStatus == RequestStatus.Approved;
+        var cancellingApproved = request.Status is RequestStatus.Approved or RequestStatus.CancellationRequested
+                                 && transition.NewStatus == RequestStatus.Cancelled;
 
         if (approving || cancellingApproved)
         {

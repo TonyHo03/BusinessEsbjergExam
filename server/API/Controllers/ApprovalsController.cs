@@ -32,6 +32,11 @@ public class ApprovalsController(ApprovalService service) : ControllerBase
     public Task<ActionResult<DecisionResponseDto>> Cancel(Guid id, CancellationToken ct) =>
         Decide(id, RequestAction.Cancel, null, ct);
 
+    /// <summary>Medarbejderen beder om at få godkendt ferie annulleret. Bogholderiet skal godkende.</summary>
+    [HttpPost("{id:guid}/request-cancellation")]
+    public Task<ActionResult<DecisionResponseDto>> RequestCancellation(Guid id, CancellationToken ct) =>
+        Decide(id, RequestAction.RequestCancellation, null, ct);
+
     private async Task<ActionResult<DecisionResponseDto>> Decide(
         Guid id, RequestAction action, string? reason, CancellationToken ct)
     {
@@ -40,7 +45,7 @@ public class ApprovalsController(ApprovalService service) : ControllerBase
         {
             DecisionOutcome.Done => new DecisionResponseDto(id, result.NewStatus!.Value),
             DecisionOutcome.NotFound => NotFound(),
-            _ => Problem(result.Error, statusCode: StatusCodes.Status409Conflict) 
+            _ => Problem(result.Error, statusCode: StatusCodes.Status409Conflict)
         };
     }
 }

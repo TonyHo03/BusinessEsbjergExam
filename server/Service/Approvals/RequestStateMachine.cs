@@ -16,7 +16,7 @@ public readonly record struct TransitionResult(bool IsAllowed, RequestStatus New
 }
 
 public class RequestStateMachine
-{   
+{
     public static TransitionResult Apply(RequestStatus current, RequestAction action, TransitionContext ctx)
     {
         if (current is RequestStatus.Rejected or RequestStatus.Cancelled)
@@ -25,12 +25,17 @@ public class RequestStateMachine
                 $"A {current.ToString().ToLowerInvariant()} request cannot be changed");
         }
 
+        // Medarbejderen har bedt om annullering – bogholderiet godkender eller afviser den
+        if (current == RequestStatus.CancellationRequested && action is RequestAction.Approve or RequestAction.Reject)
+            return DecideCancellation(current, action == RequestAction.Approve, ctx);
+
         return action switch
         {
             RequestAction.Approve => Decide(current, RequestStatus.Approved, "approve", requireReason: false, ctx),
             RequestAction.Reject => Decide(current, RequestStatus.Rejected, "reject", requireReason: true, ctx),
-            RequestAction.Cancel => Cancel(current, ctx), 
-            _=> TransitionResult.Deny(current, "Unknown Action")
+            RequestAction.Cancel => Cancel(current, ctx),
+            RequestAction.RequestCancellation => RequestCancellation(current, ctx),
+            _ => TransitionResult.Deny(current, "Unknown Action")
         };
     }
 
@@ -40,9 +45,9 @@ public class RequestStateMachine
         if (current != RequestStatus.Pending)
             return TransitionResult.Deny(current, $"Only pending requests can be {target.ToString().ToLowerInvariant()}");
         if (!ctx.ActorHasAccountingRights)
-            return TransitionResult.Deny(current, $"Only accounting can  {verb} requests");
+            return TransitionResult.Deny(current, $"Only accounting can {verb} requests");
         if (requireReason && string.IsNullOrWhiteSpace(ctx.Reason))
-            return TransitionResult.Deny(current, $"A reason is required when rejecting a request");
+            return TransitionResult.Deny(current, "A reason is required when rejecting a request");
 
         return TransitionResult.Allow(target);
     }
@@ -53,16 +58,46 @@ public class RequestStateMachine
         {
             return ctx.ActorIsOwner || ctx.ActorHasAccountingRights
                 ? TransitionResult.Allow(RequestStatus.Cancelled)
-                : TransitionResult.Deny(current, $"You can only cancel your own requests");
+                : TransitionResult.Deny(current, "You can only cancel your own requests");
         }
 
         if (!ctx.ActorHasAccountingRights)
             return TransitionResult.Deny(current, "Approved leave can only be cancelled by accounting or an admin");
 
+        if (ctx.Today >= ctx.StartDate)
+            return TransitionResult.Deny(current, "This holiday has already started and cannot be cancelled");
+
+        return TransitionResult.Allow(RequestStatus.Cancelled);
+    }
+
+    private static TransitionResult RequestCancellation(RequestStatus current, TransitionContext ctx)
+    {
+        if (current != RequestStatus.Approved)
+            return TransitionResult.Deny(current, "Only approved holiday can be asked to be cancelled");
+        if (!ctx.ActorIsOwner)
+            return TransitionResult.Deny(current, "You can only ask to cancel your own holiday");
+        if (ctx.Today >= ctx.StartDate)
+            return TransitionResult.Deny(current, "This holiday has already started and cannot be cancelled");
+
+        return TransitionResult.Allow(RequestStatus.CancellationRequested);
+    }
+
+    private static TransitionResult DecideCancellation(RequestStatus current, bool approve, TransitionContext ctx)
+    {
+        if (!ctx.ActorHasAccountingRights)
+            return TransitionResult.Deny(current, "Only accounting can decide on a cancellation");
+
+        if (!approve)
+        {
+            // Afvist: ferien står ved magt
+            return string.IsNullOrWhiteSpace(ctx.Reason)
+                ? TransitionResult.Deny(current, "A reason is required when keeping the holiday")
+                : TransitionResult.Allow(RequestStatus.Approved);
+        }
 
         if (ctx.Today >= ctx.StartDate)
             return TransitionResult.Deny(current, "This holiday has already started and cannot be cancelled");
-        
+
         return TransitionResult.Allow(RequestStatus.Cancelled);
     }
 }

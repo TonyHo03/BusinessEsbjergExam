@@ -16,7 +16,15 @@ const statusStyles: Record<string, string> = {
     Approved: "bg-success-bg text-success-fg",
     Rejected: "bg-destructive-bg text-destructive-fg",
     Cancelled: "bg-muted text-muted-foreground",
+    CancellationRequested: "bg-[#FEF3C7] text-[#92400E]",
 };
+const statusLabels: Record<string, string> = {
+    Pending: "Pending", Approved: "Approved", Rejected: "Rejected", Cancelled: "Cancelled",
+    CancellationRequested: "Cancellation requested",
+};
+
+const buttonStyle =
+    "inline-flex h-9 items-center rounded-lg border border-[#E9E1D6] bg-card px-4 text-sm font-medium text-[#023459] hover:bg-muted disabled:opacity-50";
 
 export function MyRequestsView() {
     const {user} = useAuth();
@@ -35,23 +43,29 @@ export function MyRequestsView() {
 
     useEffect(load, [user?.id]);
 
-    const handleCancel = async (id: string) => {
+    const run = async (id: string, action: () => Promise<unknown>, fallback: string) => {
         setBusyId(id);
         setError(null);
         try {
-            await api.api.approvalsCancel({id});
+            await action();
             load();
         } catch (err: any) {
             const problem = await err?.json?.().catch(() => null);
-            setError(problem?.detail ?? "Could not cancel the request.");
+            setError(problem?.detail ?? fallback);
         } finally {
             setBusyId(null);
         }
     };
 
+    const handleCancel = (id: string) =>
+        run(id, () => api.api.approvalsCancel({id}), "Could not cancel the request.");
+
+    const handleRequestCancellation = (id: string) =>
+        run(id, () => api.api.approvalsRequestCancellation({id}), "Could not ask for a cancellation.");
+
     // Godkendt ferie, der ikke er startet endnu – nærmeste først
     const upcoming = requests
-        .filter(r => r.status === "Approved" && r.startDate! >= today())
+        .filter(r => (r.status === "Approved" || r.status === "CancellationRequested") && r.startDate! >= today())
         .sort((a, b) => a.startDate!.localeCompare(b.startDate!));
 
     return (
@@ -68,8 +82,10 @@ export function MyRequestsView() {
                 <Card className="flex-1">
                     <CardContent className="flex flex-col gap-6">
                         <p className="text-sm text-muted-foreground">Waiting for a decision</p>
-                        <p className="text-3xl font-semibold text-[#023459]">{requests.filter(r => r.status === "Pending").length}</p>
-                        <p className="text-xs text-muted-foreground">The hours are reserved until accounting decides</p>
+                        <p className="text-3xl font-semibold text-[#023459]">
+                            {requests.filter(r => r.status === "Pending" || r.status === "CancellationRequested").length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Requests and cancellations accounting hasn't decided yet</p>
                     </CardContent>
                 </Card>
                 <Card className="flex-1">
@@ -102,8 +118,8 @@ export function MyRequestsView() {
                             </TableRow>
                         )}
                         {requests.map(r => {
-                            const started = r.startDate! < today();
-                            const canCancel = r.status === "Pending" || (r.status === "Approved" && !started && isAccounting);
+                            const started = r.startDate! <= today();
+                            const busy = busyId === r.id;
                             return (
                                 <TableRow key={r.id}>
                                     <TableCell>
@@ -116,19 +132,30 @@ export function MyRequestsView() {
                                     <TableCell>{formatHours(r.hours!)}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1 items-start">
-                                            <Badge className={statusStyles[r.status!]}>{r.status}</Badge>
-                                            {r.rejectionReason && <span className="text-xs text-[#B5583B] whitespace-normal">“{r.rejectionReason}”</span>}
+                                            <Badge className={statusStyles[r.status!]}>{statusLabels[r.status!] ?? r.status}</Badge>
+                                            {r.rejectionReason && (
+                                                <span className="text-xs text-[#B5583B] whitespace-normal">
+                                                    {r.status === "Approved" ? "Cancellation declined: " : ""}“{r.rejectionReason}”
+                                                </span>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>{formatDate(r.createdAt!)}</TableCell>
                                     <TableCell className="text-right">
-                                        {canCancel ? (
-                                            <button type="button" disabled={busyId === r.id} onClick={() => handleCancel(r.id!)}
-                                                    className="inline-flex h-9 items-center rounded-lg border border-[#E9E1D6] bg-card px-4 text-sm font-medium text-[#023459] hover:bg-muted disabled:opacity-50">
-                                                {r.status === "Pending" ? "Withdraw" : "Cancel"}
+                                        {r.status === "Pending" ? (
+                                            <button type="button" disabled={busy} onClick={() => handleCancel(r.id!)} className={buttonStyle}>
+                                                Withdraw
+                                            </button>
+                                        ) : r.status === "Approved" && !started && isAccounting ? (
+                                            <button type="button" disabled={busy} onClick={() => handleCancel(r.id!)} className={buttonStyle}>
+                                                Cancel
                                             </button>
                                         ) : r.status === "Approved" && !started ? (
-                                            <span className="text-xs text-muted-foreground">Ask accounting to cancel</span>
+                                            <button type="button" disabled={busy} onClick={() => handleRequestCancellation(r.id!)} className={buttonStyle}>
+                                                Request cancellation
+                                            </button>
+                                        ) : r.status === "CancellationRequested" ? (
+                                            <span className="text-xs text-muted-foreground">Waiting for accounting</span>
                                         ) : null}
                                     </TableCell>
                                 </TableRow>

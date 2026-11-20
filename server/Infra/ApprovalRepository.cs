@@ -9,7 +9,7 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
     {
         var query = from request in db.HolidayRequests
             join employee in db.Employees on request.EmployeeId equals employee.Id
-            where request.Status == RequestStatus.Pending
+            where request.Status == RequestStatus.Pending || request.Status == RequestStatus.CancellationRequested
             orderby request.CreatedAt
             select new HolidayRequestSnapshot(
                 request.Id,
@@ -58,9 +58,12 @@ public class ApprovalRepository(AppDb db) : IApprovalRepository
     {
         await using var transaction = db.BeginTransaction();
 
+        // Begrundelsen gemmes ved afvisning – også når en annullering afvises, så medarbejderen kan se hvorfor
+        var reason = audit.Action == RequestAction.Reject ? audit.Reason : null;
+
         var updated = await db.HolidayRequests.Where(request => request.Id == requestId && request.Status == expected)
-            .Set(request => request.Status, next).Set(request => request.RejectionReason,
-                next == RequestStatus.Rejected ? audit.Reason : null)
+            .Set(request => request.Status, next)
+            .Set(request => request.RejectionReason, reason)
             .Set(request => request.DecidedBy, audit.ActorId)
             .Set(request => request.DecidedAt, audit.OccurredAt).UpdateAsync(ct);
 

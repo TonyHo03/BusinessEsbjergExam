@@ -14,4 +14,5 @@ export interface PendingRequestDto {
     submittedAt: string;
     note?: string | null;
     isOwnRequest: boolean;
+    isCancellation?: boolean;
 }

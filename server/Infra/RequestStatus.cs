@@ -5,7 +5,8 @@ namespace Infra;
 
 public enum RequestAction
 {
-    [MapValue("Approve")]Approve,
-    [MapValue("Reject")]Reject,
-    [MapValue("Cancel")]Cancel
+    [MapValue("Approve")] Approve,
+    [MapValue("Reject")] Reject,
+    [MapValue("Cancel")] Cancel,
+    [MapValue("RequestCancellation")] RequestCancellation
 }
