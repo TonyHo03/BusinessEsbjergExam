@@ -17,10 +17,6 @@ public class RequestValidatorTests
         new RuleParameter { Key = ParameterKeys.NoticeOtherMonths, Value = "1", EffectiveFrom = new DateOnly(2020, 1, 1) }
     ]);
 
-    /// <summary>
-    /// Saldoen set fra ansøgningens startdato. Standard er Mette: 104,49 t til rådighed,
-    /// må låne 1 uge (37 t) og har rigeligt den 31. august.
-    /// </summary>
     private static BalanceOutlook Outlook(decimal available = 104.49m, decimal atYearEnd = 300m, decimal debtLimit = 37m) =>
         new(available, debtLimit, new DateOnly(2027, 8, 31), atYearEnd);
 

@@ -11,13 +11,6 @@ public enum LedgerEntryType
     [MapValue("Transfer")] Transfer      // overført til næste ferieår
 }
 
-/// <summary>
-/// Én bevægelse på en ferie-konto. Days og Hours er med fortegn:
-/// negativ trækker fra saldoen (fx afholdt ferie), positiv lægger til (fx en rettelse).
-/// Days er saldoens egentlige enhed – ferie er en ret til dage. Hours er de timer,
-/// bevægelsen svarede til på datoen, og gemmes som dokumentation (fx til lønsystemet).
-/// Optjening gemmes ikke her, den beregnes.
-/// </summary>
 [Table("ledger_entry")]
 public class LedgerEntry
 {

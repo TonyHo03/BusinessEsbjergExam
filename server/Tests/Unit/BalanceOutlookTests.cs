@@ -4,7 +4,6 @@ using Xunit;
 
 namespace Tests.Unit;
 
-/// <summary>Saldoen set fra en ansøgnings startdato, beregnet ud fra Mettes data.</summary>
 public class BalanceOutlookTests
 {
     private static readonly Employee Mette = new()

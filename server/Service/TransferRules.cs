@@ -2,15 +2,6 @@ using Infra;
 
 namespace Service;
 
-/// <summary>
-/// Regler for overførsel af ferie (uge 1–5):
-/// - Funktionen kan slås til og fra med parameteren transfer.enabled.
-/// - Der kan kun overføres fra den periode, der udløber 31.12 i år, og kun indtil den dato.
-/// - Kun ferie ud over 4 uger (20 dage) kan overføres, og højst transfer.max_days dage pr. periode (5),
-///   inkl. det der allerede er overført eller anmodet om.
-/// - Man kan ikke overføre flere dage, end der er tilbage.
-/// Dagene flyttes til næste optjeningsår og kan derfor bruges et år længere.
-/// </summary>
 public static class TransferRules
 {
     public static IReadOnlyList<string> Validate(
@@ -49,7 +40,6 @@ public static class TransferRules
         return errors;
     }
 
-    /// <summary>To poster: dagene trækkes fra perioden og lægges til næste optjeningsår.</summary>
     public static IReadOnlyList<LedgerEntry> Entries(
         Guid employeeId, Guid transferId, int fromEarningYear, decimal days, decimal dayLength, DateOnly date)
     {

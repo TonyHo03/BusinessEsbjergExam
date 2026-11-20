@@ -3,10 +3,8 @@ using Infra;
 
 namespace Service;
 
-/// <summary>Fra- og til-tid på én dag som "HH:mm". Begge tomme betyder, at det ikke er en arbejdsdag.</summary>
 public record DayTimes(string? Start, string? End);
 
-/// <param name="EffectiveFrom">Datoen skemaet gælder fra. Det tidligere skema gælder til og med dagen før.</param>
 public record WorkScheduleInput(
     DateOnly EffectiveFrom,
     DayTimes Monday,
@@ -15,11 +13,6 @@ public record WorkScheduleInput(
     DayTimes Thursday,
     DayTimes Friday);
 
-/// <summary>
-/// Regler for et nyt arbejdsskema. Et skema ændrer aldrig fortiden:
-/// det nye skema skal starte efter det nuværende og tidligst i dag.
-/// Har medarbejderen intet skema endnu, må det starte allerede på ansættelsesdatoen.
-/// </summary>
 public static class WorkScheduleRules
 {
     public static (WorkSchedule? Schedule, IReadOnlyList<string> Errors) Build(
@@ -64,17 +57,12 @@ public static class WorkScheduleRules
         }, errors);
     }
 
-    /// <summary>Det skema, der gælder nu og ingen slutdato har, skal slutte dagen før det nye starter.</summary>
     public static WorkSchedule? ScheduleToClose(IReadOnlyList<WorkSchedule> existing, DateOnly newFrom) =>
         existing
             .Where(s => s.EffectiveFrom < newFrom && (s.EffectiveTo is null || s.EffectiveTo >= newFrom))
             .OrderByDescending(s => s.EffectiveFrom)
             .FirstOrDefault();
     
-    /// <summary>
-    /// Kun det seneste skema kan slettes, og kun hvis det ikke er trådt i kraft endnu – ellers ville det ændre fortiden.
-    /// Null betyder, at det må slettes.
-    /// </summary>
     public static string? CanDelete(WorkSchedule schedule, IReadOnlyList<WorkSchedule> existing, DateOnly today)
     {
         if (schedule.EffectiveFrom < today)
@@ -86,7 +74,6 @@ public static class WorkScheduleRules
         return null;
     }
 
-    /// <summary>Det skema, der sluttede dagen før det slettede startede. Det skal gælde videre uden slutdato.</summary>
     public static WorkSchedule? ScheduleToReopen(IReadOnlyList<WorkSchedule> existing, WorkSchedule deleted) =>
         existing.FirstOrDefault(s => s.EffectiveTo == deleted.EffectiveFrom.AddDays(-1));
 

@@ -29,10 +29,6 @@ public record RequestValidation(IReadOnlyList<ValidationIssue> Issues, bool IsMa
     public bool IsValid => Issues.All(i => i.Severity != IssueSeverity.Error);
 }
 
-/// <summary>
-/// Tjekker en ferieansøgning mod reglerne. Returnerer alle problemer på én gang,
-/// så brugeren kan se dem samlet i stedet for ét ad gangen.
-/// </summary>
 public static class RequestValidator
 {
     private const int MinimumBlockDays = 5;

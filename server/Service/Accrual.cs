@@ -2,24 +2,8 @@ using Infra;
 
 namespace Service;
 
-/// <summary>
-/// Beregner hvor mange feriedage en medarbejder har optjent i én optjeningsperiode.
-/// Optjening gemmes ikke, den beregnes ud fra ansættelse og parametre.
-///
-/// Saldoen føres i dage, fordi ferie er en ret til dage. Timerne regnes først ud, når
-/// saldoen vises eller bruges – med daglængden fra det skema, der gælder på datoen.
-/// Skifter en medarbejder skema, er antallet af dage derfor det samme, og timerne følger med.
-///
-/// Regler:
-/// - En måned tæller først, når den er slut (eller ansættelsen er slut i den måned).
-/// - Uge 1–5: dage pr. måned (2,08), uanset om man er på fuld tid eller deltid.
-/// - 6. ferieuge: timer pr. måned for en fuldtidsansat (3,083) omregnet til dage á 7,4 t.
-/// - Starter eller stopper man midt i en måned, optjener man for de kalenderdage, man var ansat.
-/// - Parametre slås op på den måned, dagene optjenes i.
-/// </summary>
 public static class Accrual
 {
-    /// <summary>En fuldtidsansat feriedag: 37 t / 5.</summary>
     private const decimal FullTimeDayLength = 37m / 5m;
 
     public static decimal Accrued(

@@ -2,12 +2,6 @@
 
 namespace Service;
 
-/// <summary>
-/// Én række i bogholderiets medarbejderoversigt. Timer er omregnet med daglængden på AsOf.
-/// Har medarbejderen intet arbejdsskema på datoen, kan timerne ikke regnes ud, og felterne er null.
-/// </summary>
-/// <param name="ExpiringHours">Timer i perioder, der snart udløber eller er udløbet (skal afholdes, overføres eller udbetales).</param>
-/// <param name="ExpiresOn">Den tidligste udløbsdato blandt de perioder.</param>
 public record EmployeeOverviewRow(
     Guid EmployeeId,
     string Name,

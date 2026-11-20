@@ -10,10 +10,6 @@ namespace API.Controllers;
 [Authorize]
 public class BalancesController(HolidayService holidays) : ControllerBase
 {
-    /// <summary>
-    /// Saldi pr. konto og optjeningsperiode med udløbsdatoer.
-    /// Angiv asOf for at se saldoen på en anden dato, fx "hvor meget har jeg i december?".
-    /// </summary>
     [HttpGet]
     public async Task<ActionResult<BalancesResponse>> Get(Guid employeeId, [FromQuery] DateOnly? asOf)
     {

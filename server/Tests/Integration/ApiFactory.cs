@@ -10,16 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.Integration;
 
-/// <summary>
-/// Starter en rigtig Postgres i Docker, kører db/init.sql og starter API'et mod den.
-/// Hver testklasse får sin egen database (via IClassFixture), så tests ikke påvirker hinanden.
-/// </summary>
 public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    /// <summary>Mette fra testdataene i init.sql.</summary>
     public static readonly Guid MetteId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-    /// <summary>Samme JSON-format som API'et: camelCase og enums som tekst.</summary>
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -70,7 +64,6 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _database.DisposeAsync();
     }
 
-    /// <summary>Finder db/init.sql ved at gå op fra test-mappen til roden af repoet.</summary>
     private static string FindInitScript()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
