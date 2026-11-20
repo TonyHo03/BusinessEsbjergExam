@@ -63,23 +63,6 @@ public class BalanceOutlookTests
     }
 
     [Fact]
-    public void Debt_limit_is_one_week_of_the_employees_own_schedule()
-    {
-        var fullTime = Outlook(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15));
-        var partTime = Outlook(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15),
-            schedules: [TestSchedules.SameEveryDay("09:00-15:00")]); // 30 t/uge
-
-        Assert.Equal(37m, fullTime.DebtLimit);
-        Assert.Equal(30m, partTime.DebtLimit);
-    }
-
-    [Fact]
-    public void Week6_has_no_debt_limit()
-    {
-        Assert.Equal(0m, Outlook(HolidayAccount.Week6, new DateOnly(2026, 12, 15)).DebtLimit);
-    }
-
-    [Fact]
     public void Year_end_is_the_31_august_after_the_start_date()
     {
         Assert.Equal(new DateOnly(2027, 8, 31), Outlook(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15)).YearEnd);

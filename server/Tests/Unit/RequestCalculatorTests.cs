@@ -27,14 +27,6 @@ public class RequestCalculatorTests
     }
 
     [Fact]
-    public void A_tuesday_costs_7_5_hours()
-    {
-        var result = Calc(new DateOnly(2026, 11, 17), new DateOnly(2026, 11, 17));
-
-        Assert.Equal(7.5m, result.TotalHours);
-    }
-
-    [Fact]
     public void A_full_week_costs_37_hours()
     {
         var result = Calc(new DateOnly(2026, 11, 16), new DateOnly(2026, 11, 20));

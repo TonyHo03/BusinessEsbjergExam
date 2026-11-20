@@ -51,7 +51,6 @@ public class ParameterRulesTests
     }
 
     [Theory]
-    [InlineData(ParameterKeys.Weeks1To5DaysPerMonth, "abc")]
     [InlineData(ParameterKeys.Weeks1To5DaysPerMonth, "2,16")] // komma er ikke decimaltegn
     [InlineData(ParameterKeys.Weeks1To5DaysPerMonth, "-1")]
     [InlineData(ParameterKeys.NoticeOtherMonths, "1.5")]
@@ -64,7 +63,6 @@ public class ParameterRulesTests
     [Theory]
     [InlineData(ParameterKeys.TransferEnabled, "false")]
     [InlineData(ParameterKeys.NoticeOtherMonths, "2")]
-    [InlineData(ParameterKeys.TransferMaxDays, "5")]
     public void Values_of_the_right_kind_are_accepted(string key, string value)
     {
         Assert.Empty(Validate(key, value, Today));

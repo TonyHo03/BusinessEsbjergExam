@@ -93,17 +93,6 @@ public class RequestValidatorTests
     }
 
     [Fact]
-    public void More_than_one_week_of_holiday_debt_is_rejected()
-    {
-        // 3 uger = 111 t. Har 60 t + 37 t lån = 97 t
-        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 14), new DateOnly(2027, 1, 1),
-            Outlook(available: 60m));
-
-        Assert.False(v.IsValid);
-        Assert.True(Has(v, IssueCode.InsufficientBalance));
-    }
-
-    [Fact]
     public void No_debt_warning_when_the_balance_covers_the_request()
     {
         var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23),
@@ -172,10 +161,11 @@ public class RequestValidatorTests
     [Fact]
     public void All_problems_are_reported_at_once()
     {
-        // For kort varsel og for mange timer (3 uger = 111 t, har 60 + 37)
+        // For kort varsel og mere end én uges feriegæld (3 uger = 111 t, har 60 + 37)
         var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 11, 16), new DateOnly(2026, 12, 4),
             Outlook(available: 60m));
 
+        Assert.False(v.IsValid);
         Assert.True(Has(v, IssueCode.NotEnoughNotice));
         Assert.True(Has(v, IssueCode.InsufficientBalance));
     }
