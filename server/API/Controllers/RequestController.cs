@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using API.Security;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Service;
 
 namespace API.Controllers;
 
 [ApiController]
 [Route("api/requests")]
+[Authorize]
 public class RequestsController(RequestService requests) : ControllerBase
 {
     private const int MaxDays = 366;
@@ -18,6 +21,9 @@ public class RequestsController(RequestService requests) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RequestPreview>> Preview(RequestInput input)
     {
+        if (!User.CanAccess(input.EmployeeId))
+            return Forbid();
+
         if (CheckPeriod(input) is { } problem)
             return problem;
 
@@ -32,6 +38,9 @@ public class RequestsController(RequestService requests) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RequestDto>> Submit(RequestInput input)
     {
+        if (!User.CanAccess(input.EmployeeId))
+            return Forbid();
+
         if (CheckPeriod(input) is { } problem)
             return problem;
 
@@ -48,8 +57,13 @@ public class RequestsController(RequestService requests) : ControllerBase
 
     /// <summary>En medarbejders ansøgninger, nyeste først.</summary>
     [HttpGet("/employees/{employeeId:guid}/requests")]
-    public async Task<ActionResult<IReadOnlyList<RequestDto>>> GetForEmployee(Guid employeeId) =>
-        Ok(await requests.GetForEmployeeAsync(employeeId));
+    public async Task<ActionResult<IReadOnlyList<RequestDto>>> GetForEmployee(Guid employeeId)
+    {
+        if (!User.CanAccess(employeeId))
+            return Forbid();
+
+        return Ok(await requests.GetForEmployeeAsync(employeeId));
+    }
 
     private ActionResult? CheckPeriod(RequestInput input)
     {

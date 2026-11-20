@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Service;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers;
 
 [ApiController]
 [Route("team-holidays")]
+[Authorize]
 public class TeamHolidaysController(TeamHolidayService teamHolidays) : ControllerBase
 {
     private const int MaxDays = 366;

@@ -19,7 +19,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refresh = async () => {
         try {
             const me = await api.api.authMe();
-            console.log("raw /auth/me:", me);
             setUser(me);
         } catch (err) {
             console.error("refresh failed:", err);

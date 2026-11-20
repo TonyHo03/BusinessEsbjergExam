@@ -798,7 +798,7 @@ export class Api<
     authLogout: (params: RequestParams = {}) =>
       this.request<Blob, any>({
         path: `/api/Auth/logout`,
-        method: "GET",
+        method: "POST",
         ...params,
       }),
 
