@@ -33,6 +33,7 @@ builder.Services.AddScoped<ApprovalService>();
 builder.Services.AddScoped<TransferService>();
 builder.Services.AddScoped<EmployeeOverviewService>();
 builder.Services.AddScoped<ParameterService>();
+builder.Services.AddScoped<WorkScheduleService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddSingleton<PasswordHasher>();

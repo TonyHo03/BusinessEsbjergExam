@@ -353,6 +353,44 @@ export interface UpdateEmployeeRequest {
   role?: Roles;
 }
 
+export interface WorkSchedulesResponse {
+  /** @format date */
+  employeeStartDate?: string;
+  schedules?: WorkScheduleDto[];
+}
+
+export interface WorkScheduleDto {
+  /** @format guid */
+  id?: string;
+  /** @format date */
+  effectiveFrom?: string;
+  /** @format date */
+  effectiveTo?: string | null;
+  monday?: DayTimes;
+  tuesday?: DayTimes;
+  wednesday?: DayTimes;
+  thursday?: DayTimes;
+  friday?: DayTimes;
+  /** @format decimal */
+  weeklyHours?: number;
+  isCurrent?: boolean;
+}
+
+export interface DayTimes {
+  start?: string | null;
+  end?: string | null;
+}
+
+export interface WorkScheduleInput {
+  /** @format date */
+  effectiveFrom?: string;
+  monday?: DayTimes;
+  tuesday?: DayTimes;
+  wednesday?: DayTimes;
+  thursday?: DayTimes;
+  friday?: DayTimes;
+}
+
 export interface ApprovalsApproveParams {
   /** @format guid */
   id: string;
@@ -432,6 +470,23 @@ export interface UserActivateUserParams {
 }
 
 export interface UserDeactivateUserParams {
+  /** @format guid */
+  id: string;
+}
+
+export interface WorkSchedulesGetParams {
+  /** @format guid */
+  employeeId: string;
+}
+
+export interface WorkSchedulesAddParams {
+  /** @format guid */
+  employeeId: string;
+}
+
+export interface WorkSchedulesDeleteParams {
+  /** @format guid */
+  employeeId: string;
   /** @format guid */
   id: string;
 }
@@ -793,7 +848,7 @@ export class Api<
      *
      * @tags Auth
      * @name AuthLogout
-     * @request GET:/api/Auth/logout
+     * @request POST:/api/Auth/logout
      */
     authLogout: (params: RequestParams = {}) =>
       this.request<Blob, any>({
@@ -1096,6 +1151,62 @@ export class Api<
       this.request<void, any>({
         path: `/api/User/deactivate/${id}`,
         method: "POST",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WorkSchedules
+     * @name WorkSchedulesGet
+     * @request GET:/api/employees/{employeeId}/schedules
+     */
+    workSchedulesGet: (
+      { employeeId }: WorkSchedulesGetParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<WorkSchedulesResponse, any>({
+        path: `/api/employees/${employeeId}/schedules`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WorkSchedules
+     * @name WorkSchedulesAdd
+     * @request POST:/api/employees/{employeeId}/schedules
+     */
+    workSchedulesAdd: (
+      { employeeId }: WorkSchedulesAddParams,
+      data: WorkScheduleInput,
+      params: RequestParams = {},
+    ) =>
+      this.request<WorkScheduleDto, string[] | ProblemDetails>({
+        path: `/api/employees/${employeeId}/schedules`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WorkSchedules
+     * @name WorkSchedulesDelete
+     * @request DELETE:/api/employees/{employeeId}/schedules/{id}
+     */
+    workSchedulesDelete: (
+      { employeeId, id }: WorkSchedulesDeleteParams,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, ProblemDetails | string>({
+        path: `/api/employees/${employeeId}/schedules/${id}`,
+        method: "DELETE",
         ...params,
       }),
   };

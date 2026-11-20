@@ -50,12 +50,12 @@ export function DashboardView() {
             .catch(() => { setBalances(null); setBalanceError("Your balance can't be shown. You may not have a work schedule yet."); });
     }, [user?.id, asOf]);
 
+    // Teamkalenderen viser 4 uger fra den valgte dato
     useEffect(() => {
-        const from = today();
-        api.teamHolidays.teamHolidaysGet({from, to: addDays(from, 27)})
+        api.teamHolidays.teamHolidaysGet({from: asOf, to: addDays(asOf, 27)})
             .then(setTeam)
             .catch(() => setTeam(null));
-    }, []);
+    }, [asOf]);
 
     const needsAction = balances?.periods?.filter(p => p.needsAction) ?? [];
     const isToday = asOf === today();
@@ -138,6 +138,13 @@ export function DashboardView() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody className="[&_td]:py-4 [&_td]:text-[#023459]">
+                                {(balances.periods?.length ?? 0) === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center text-muted-foreground!">
+                                            No holiday earned yet. Holiday is earned at the end of each month you are employed.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                                 {balances.periods?.map(p => (
                                     <TableRow key={`${p.account}-${p.earningYear}`}>
                                         <TableCell className="font-medium">{periodLabel(p.account, p.earningYear)}</TableCell>
@@ -159,7 +166,7 @@ export function DashboardView() {
                 </>
             )}
 
-            <TeamCalendar team={team}/>
+            <TeamCalendar team={team} from={asOf}/>
         </div>
     );
 }
@@ -167,7 +174,7 @@ export function DashboardView() {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function TeamCalendar({team}: {team: TeamCalendarResponse | null}) {
+function TeamCalendar({team, from}: {team: TeamCalendarResponse | null, from: string}) {
     if (!team) return null;
 
     const workingDays = (team.days ?? []).filter(d => d.isWorkingDay);
@@ -177,12 +184,13 @@ function TeamCalendar({team}: {team: TeamCalendarResponse | null}) {
     // Ny uge starter mandag – den dag får en tydeligere kant til venstre
     const startsWeek = (date: string) => new Date(date).getDay() === 1;
     const anyoneAway = workingDays.some(d => (d.absent ?? 0) > 0);
+    const fromLabel = from === today() ? "today" : formatDate(from);
 
     return (
         <div className="flex flex-col gap-4 mt-4">
             <div className="flex items-end">
                 <div className="flex flex-col gap-1">
-                    <Label className="text-[#0F2338] text-xl font-normal">Team holiday – next 4 weeks</Label>
+                    <Label className="text-[#0F2338] text-xl font-normal">Team holiday – 4 weeks from {fromLabel}</Label>
                     <Label className="text-[#516080]">Approved holiday only. Weekends and public holidays are left out.</Label>
                 </div>
                 <div className="flex items-center gap-4 ml-auto text-xs text-[#516080]">
@@ -240,7 +248,7 @@ function TeamCalendar({team}: {team: TeamCalendarResponse | null}) {
                 </table>
 
                 {!anyoneAway && (
-                    <p className="mt-3 text-sm text-muted-foreground">Nobody on the team has approved holiday in the next 4 weeks.</p>
+                    <p className="mt-3 text-sm text-muted-foreground">Nobody on the team has approved holiday in these 4 weeks.</p>
                 )}
             </div>
         </div>

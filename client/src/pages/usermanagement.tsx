@@ -1,5 +1,5 @@
 import {Label} from "@/components/ui/label.tsx";
-import {Ban, Edit, UserPlus} from "lucide-react";
+import {Ban, CalendarClock, Edit, MoreHorizontal, UserPlus} from "lucide-react";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Card, CardContent} from "../components/ui/card.tsx";
 import {Input} from "@/components/ui/input.tsx";
@@ -29,6 +29,7 @@ import {
     DialogTitle
 } from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {WorkScheduleDialog} from "@/components/WorkScheduleDialog.tsx";
 
 
 export function UserManagementView() {
@@ -41,6 +42,7 @@ export function UserManagementView() {
     const [openEditing, setOpenEditing] = useState<boolean>(false);
 
     const [editingEmployee, setEditingEmployee] = useState<EmployeeDto | null>(null);
+    const [scheduleEmployee, setScheduleEmployee] = useState<EmployeeDto | null>(null);
 
 
     useEffect(() => {
@@ -89,8 +91,8 @@ export function UserManagementView() {
             <Separator className="h-px"/>
             <div className="flex w-full">
                 <div className="flex flex-col gap-2">
-                    <Label>Find a user:</Label>
-                    <Input className="bg-card!" placeholder="Search after name or email..."
+                    <Label htmlFor="search">Find a user:</Label>
+                    <Input id="search" className="bg-card! w-72" placeholder="Search by name or email..."
                            value={search} onChange={e => setSearch(e.target.value)}/>
                 </div>
                 <div className="flex flex-col gap-2 ml-auto">
@@ -106,14 +108,15 @@ export function UserManagementView() {
                     </Select>
                 </div>
             </div>
-            <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing}/>
+            <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing} setScheduleEmployee={setScheduleEmployee}/>
             <CreateEmployeeDialog open={open} setOpen={setOpen}/>
+            <WorkScheduleDialog employee={scheduleEmployee} onClose={() => setScheduleEmployee(null)}/>
             <UpdateEmployeeDialog open={openEditing} setOpen={setOpenEditing} editingEmployee={editingEmployee} setEditingEmployee={setEditingEmployee}/>
         </div>
     );
 }
 
-function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: EmployeeDto[], setEditingEmployee: (editingEmployee: EmployeeDto | null) => void, setOpenEditing: (openEditing: boolean) => void}) {
+function UserTable({employees, setEditingEmployee, setOpenEditing, setScheduleEmployee}: {employees: EmployeeDto[], setEditingEmployee: (editingEmployee: EmployeeDto | null) => void, setOpenEditing: (openEditing: boolean) => void, setScheduleEmployee: (employee: EmployeeDto) => void}) {
 
     const handleDeactivate = (id: string) => {
         api.api.userDeactivateUser({id: id}).then(() => window.location.reload()).catch(err => console.log(err));
@@ -137,7 +140,9 @@ function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: 
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-right">
+                            <span className="sr-only">Actions</span>
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody className="[&_td]:py-4 [&_td]:text-[#023459]">
@@ -165,12 +170,20 @@ function UserTable({employees, setEditingEmployee, setOpenEditing}: {employees: 
                             <TableCell>
                                 <Badge className={statusStyles[e.status!]}>{e.status}</Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-right">
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger render={<button className="font-bold">Manage ...</button>}/>
+                                    <DropdownMenuTrigger render={
+                                                              <button type="button" aria-label={`Manage ${e.name}`}
+                                                                      className="inline-flex size-9 items-center justify-center rounded-lg text-[#023459] hover:bg-muted">
+                                                                 <MoreHorizontal className="size-5"/>
+                                                             </button>
+                                                         }/>
                                     <DropdownMenuContent className="w-45">
                                         <DropdownMenuItem onClick={() => {setEditingEmployee(e); setOpenEditing(true)}}>
                                             <Edit/> Edit Employee
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setScheduleEmployee(e)}>
+                                            <CalendarClock/> Work schedule
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         {e.status === Status.Active && <DropdownMenuItem onClick={() => handleDeactivate(e.id!)}>
