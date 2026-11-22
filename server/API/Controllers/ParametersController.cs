@@ -12,12 +12,10 @@ public class ParametersController(ParameterService parameters) : ControllerBase
 {
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
-    /// <summary>Alle regelparametre med den værdi, der gælder på asOf, og hele historikken.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ParameterDto>>> Get([FromQuery] DateOnly? asOf) =>
         Ok(await parameters.GetAsync(asOf ?? Today));
 
-    /// <summary>Tilføjer en ny værdi med en startdato. Den gamle værdi gælder stadig for datoer før.</summary>
     [HttpPost]
     [ProducesResponseType<ParameterVersionDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<IReadOnlyList<string>>(StatusCodes.Status400BadRequest)]
@@ -30,7 +28,6 @@ public class ParametersController(ParameterService parameters) : ControllerBase
             : Created($"/api/parameters/{result.Created.Id}", result.Created);
     }
 
-    /// <summary>Sletter en værdi, der ikke er trådt i kraft endnu (fx en tastefejl).</summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

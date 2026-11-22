@@ -4,10 +4,6 @@ using Xunit;
 
 namespace Tests.Unit;
 
-/// <summary>
-/// Omregning ved skemaskift (#68): ferie er en ret til dage. Når skemaet ændres, er antallet
-/// af dage det samme, og timerne regnes om med den nye daglængde (ugentlige timer / 5).
-/// </summary>
 public class ScheduleChangeTests
 {
     private static readonly Employee Mette = new()

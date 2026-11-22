@@ -3,11 +3,6 @@ using Infra;
 
 namespace Service;
 
-/// <summary>
-/// Slår regelparametre op på en given dato.
-/// Den nyeste værdi med EffectiveFrom på eller før datoen gælder,
-/// så en ny værdi aldrig ændrer beregninger bagud i tid.
-/// </summary>
 public class ParameterResolver(IEnumerable<RuleParameter> parameters)
 {
     private readonly List<RuleParameter> _parameters = parameters.ToList();

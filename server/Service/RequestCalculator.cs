@@ -19,10 +19,6 @@ public record RequestCalculation(IReadOnlyList<RequestDay> Days)
     public int WorkingDays => Days.Count(d => d.Kind == DayKind.Workday);
 }
 
-/// <summary>
-/// Omregner en periode i hele dage til timer ud fra medarbejderens arbejdsskema.
-/// Helligdage, firmafridage og dage uden timer i skemaet koster 0 timer.
-/// </summary>
 public static class RequestCalculator
 {
     public static RequestCalculation Calculate(

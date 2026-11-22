@@ -11,10 +11,6 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
-    /// <summary>
-    /// Første mandag mindst `days` dage ude. Datoerne regnes fra i dag,
-    /// så testene virker, uanset hvornår de køres.
-    /// </summary>
     private static DateOnly MondayAfter(int days)
     {
         var date = Today.AddDays(days);

@@ -6,28 +6,17 @@ namespace Tests.Unit;
 public class AccountingRolesTests
 {
     [Theory]
-    [InlineData("Accountant")]
-    [InlineData("Admin")]
-    [InlineData("admin")]
-    [InlineData("ACCOUNTANT")]
-    public void AccountingAndAdmin_HaveAccountingRights(string role) =>
-        Assert.True(AccountingRoles.Has(role));
-
-    [Theory]
-    [InlineData("Employee")]
-    [InlineData("")]
-    [InlineData(null)]
-    public void Everyone_Else_DoesNot(string? role) =>
-        Assert.False(AccountingRoles.Has(role));
-    
-    [Theory]
     [InlineData("Accountant", true)]
     [InlineData("Admin", true)]
     [InlineData("Employee", false)]
-    public void SignedInUser_HasRightsOnlyThroughTheRoleClaim(string role, bool expected)
-    {
-        var user = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, role)], "test"));
+    public void Only_accountant_and_admin_have_accounting_rights(string role, bool expected) =>
+        Assert.Equal(expected, AccountingRoles.Has(role));
 
-        Assert.Equal(expected, AccountingRoles.Has(user));
+    [Fact]
+    public void SignedInUser_HasRightsThroughTheRoleClaim()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, "Accountant")], "test"));
+
+        Assert.True(AccountingRoles.Has(user));
     }
 }

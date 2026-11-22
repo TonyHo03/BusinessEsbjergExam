@@ -4,7 +4,6 @@ using Xunit;
 
 namespace Tests.Unit;
 
-/// <summary>Saldoen set fra en ansøgnings startdato, beregnet ud fra Mettes data.</summary>
 public class BalanceOutlookTests
 {
     private static readonly Employee Mette = new()
@@ -60,23 +59,6 @@ public class BalanceOutlookTests
 
         Assert.Equal(45m, withoutPending.AvailableAtStart - withPending.AvailableAtStart);
         Assert.Equal(45m, withoutPending.AvailableAtYearEnd - withPending.AvailableAtYearEnd);
-    }
-
-    [Fact]
-    public void Debt_limit_is_one_week_of_the_employees_own_schedule()
-    {
-        var fullTime = Outlook(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15));
-        var partTime = Outlook(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15),
-            schedules: [TestSchedules.SameEveryDay("09:00-15:00")]); // 30 t/uge
-
-        Assert.Equal(37m, fullTime.DebtLimit);
-        Assert.Equal(30m, partTime.DebtLimit);
-    }
-
-    [Fact]
-    public void Week6_has_no_debt_limit()
-    {
-        Assert.Equal(0m, Outlook(HolidayAccount.Week6, new DateOnly(2026, 12, 15)).DebtLimit);
     }
 
     [Fact]

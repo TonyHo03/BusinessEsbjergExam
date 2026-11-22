@@ -2,10 +2,6 @@
 
 namespace Tests.Integration;
 
-/// <summary>
-/// Adgang: man skal være logget ind, medarbejdere må kun se deres egne data,
-/// bogholderiet må se alles, og kun admin må administrere brugere.
-/// </summary>
 public class AuthorizationTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     private static readonly string OtherEmployee = Guid.NewGuid().ToString();

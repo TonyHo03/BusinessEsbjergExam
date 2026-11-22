@@ -12,7 +12,6 @@ public class WorkSchedulesController(WorkScheduleService schedules) : Controller
 {
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
-    /// <summary>En medarbejders arbejdsskemaer, nyeste først. Medarbejderen selv og bogholderiet har adgang.</summary>
     [HttpGet]
     public async Task<ActionResult<WorkSchedulesResponse>> Get(Guid employeeId)
     {
@@ -23,7 +22,6 @@ public class WorkSchedulesController(WorkScheduleService schedules) : Controller
         return result is null ? NotFound() : Ok(result);
     }
 
-    /// <summary>Tilføjer et nyt skema (kun admin). Det nuværende skema slutter dagen før.</summary>
     [HttpPost, Authorize(Policy = AccessPolicies.AdminRights)]
     [ProducesResponseType<WorkScheduleDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<IReadOnlyList<string>>(StatusCodes.Status400BadRequest)]
@@ -41,7 +39,6 @@ public class WorkSchedulesController(WorkScheduleService schedules) : Controller
         return Created($"/api/employees/{employeeId}/schedules", result.Created);
     }
 
-    /// <summary>Sletter et kommende skema (kun admin). Det forrige skema gælder så videre.</summary>
     [HttpDelete("{id:guid}"), Authorize(Policy = AccessPolicies.AdminRights)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<string>(StatusCodes.Status409Conflict)]
