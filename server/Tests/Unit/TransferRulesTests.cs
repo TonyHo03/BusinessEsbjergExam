@@ -84,7 +84,7 @@ public class TransferRulesTests
     {
         var errors = Validate(2025, 1m, enabled: "false");
 
-        Assert.Equal("Overførsel af ferie er slået fra.", Assert.Single(errors));
+        Assert.Equal("Transferring holiday is turned off.", Assert.Single(errors));
     }
 
     [Fact]

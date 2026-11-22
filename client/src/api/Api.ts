@@ -326,6 +326,21 @@ export interface TransferInput {
   comment?: string | null;
 }
 
+export interface PendingTransferDto {
+  /** @format guid */
+  id?: string;
+  /** @format guid */
+  employeeId?: string;
+  employeeName?: string;
+  /** @format int32 */
+  fromEarningYear?: number;
+  /** @format decimal */
+  days?: number;
+  comment?: string | null;
+  /** @format date-time */
+  createdAt?: string;
+}
+
 export interface EmployeeDto {
   /** @format guid */
   id?: string;
@@ -1031,7 +1046,7 @@ export class Api<
      * @request GET:/api/transfers/pending
      */
     transfersGetPending: (params: RequestParams = {}) =>
-      this.request<TransferDto[], any>({
+      this.request<PendingTransferDto[], any>({
         path: `/api/transfers/pending`,
         method: "GET",
         format: "json",

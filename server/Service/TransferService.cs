@@ -21,6 +21,16 @@ public record TransferDto(
     string? RejectionReason,
     DateTimeOffset CreatedAt);
 
+// En overførsel, der venter på bogholderiet, med medarbejderens navn
+public record PendingTransferDto(
+    Guid Id,
+    Guid EmployeeId,
+    string EmployeeName,
+    int FromEarningYear,
+    decimal Days,
+    string? Comment,
+    DateTimeOffset CreatedAt);
+
 public record TransferResult(IReadOnlyList<string> Errors, TransferDto? Created);
 
 public record TransferDecision(DecisionOutcome Outcome, TransferDto? Transfer = null, string? Error = null);
@@ -60,13 +70,13 @@ public class TransferService(AppDb db)
         .Select(ToDto)
         .ToList();
 
-    public async Task<IReadOnlyList<TransferDto>> ListPendingAsync() =>
-        (await db.TransferRequests
-            .Where(t => t.Status == RequestStatus.Pending)
-            .OrderBy(t => t.CreatedAt)
-            .ToListAsync())
-        .Select(ToDto)
-        .ToList();
+    public async Task<IReadOnlyList<PendingTransferDto>> ListPendingAsync() =>
+        await (from t in db.TransferRequests
+                join e in db.Employees on t.EmployeeId equals e.Id
+                where t.Status == RequestStatus.Pending
+                orderby t.CreatedAt
+                select new PendingTransferDto(t.Id, t.EmployeeId, e.Name, t.FromEarningYear, t.Days, t.Comment, t.CreatedAt))
+            .ToListAsync();
 
     public async Task<TransferDecision> DecideAsync(Guid id, bool approve, string? reason, Guid actorId, DateOnly today)
     {
@@ -75,10 +85,10 @@ public class TransferService(AppDb db)
             return new TransferDecision(DecisionOutcome.NotFound);
 
         if (transfer.Status != RequestStatus.Pending)
-            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "Overførslen er allerede behandlet.");
+            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "This transfer has already been decided.");
 
         if (!approve && string.IsNullOrWhiteSpace(reason))
-            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "Angiv en begrundelse for afvisningen.");
+            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "Add a reason for rejecting.");
 
         var entries = new List<LedgerEntry>();
 
@@ -109,7 +119,7 @@ public class TransferService(AppDb db)
         if (updated != 1)
         {
             transaction.Rollback();
-            return new TransferDecision(DecisionOutcome.Conflict, Error: "Overførslen er ændret af en anden. Opdater og prøv igen.");
+            return new TransferDecision(DecisionOutcome.Conflict, Error: "This transfer was changed by someone else. Refresh and try again.");
         }
 
         foreach (var entry in entries)

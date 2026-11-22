@@ -13,29 +13,29 @@ public static class TransferRules
         DateOnly today)
     {
         if (!string.Equals(parameters.Get(ParameterKeys.TransferEnabled, today), "true", StringComparison.OrdinalIgnoreCase))
-            return ["Overførsel af ferie er slået fra."];
+            return ["Transferring holiday is turned off."];
 
         var errors = new List<string>();
         var maxDays = parameters.GetDecimal(ParameterKeys.TransferMaxDays, today);
 
         if (days <= 0)
-            errors.Add("Antal dage skal være større end 0.");
+            errors.Add("The number of days must be greater than 0.");
 
         var period = balances.FirstOrDefault(b => b.Account == HolidayAccount.Weeks1To5 && b.EarningYear == fromEarningYear);
 
         if (period is null || period.ExpiresOn.Year != today.Year || today > period.ExpiresOn)
         {
-            errors.Add($"Der kan kun overføres fra den ferie, der udløber 31.12.{today.Year}.");
+            errors.Add($"Only holiday that expires on 31.12.{today.Year} can be transferred.");
             return errors;
         }
 
         if (days > period.Remaining)
-            errors.Add($"Der er kun {Math.Round(period.Remaining, 2)} dage tilbage i perioden.");
+            errors.Add($"There are only {Math.Round(period.Remaining, 2)} days left in the period.");
 
         // Kun ferie ud over 4 uger (20 dage) kan overføres, og højst maxDays
         var limit = Math.Min(maxDays, Math.Max(period.Accrued - 20m, 0m));
         if (alreadyTransferred + days > limit)
-            errors.Add($"Der kan højst overføres {Math.Round(limit, 2)} dage (ferie ud over 4 uger). {Math.Round(alreadyTransferred, 2)} er allerede overført eller anmodet om.");
+            errors.Add($"At most {Math.Round(limit, 2)} days can be transferred (holiday above 4 weeks). {Math.Round(alreadyTransferred, 2)} are already transferred or requested.");
 
         return errors;
     }
