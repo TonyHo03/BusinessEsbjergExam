@@ -11,10 +11,6 @@ public class TeamHolidaysController(TeamHolidayService teamHolidays) : Controlle
 {
     private const int MaxDays = 366;
 
-    /// <summary>
-    /// Alles godkendte ferie i en periode og hvor mange der er væk/til stede pr. dag.
-    /// Bruges til holdkalenderen.
-    /// </summary>
     [HttpGet]
     [ProducesResponseType<TeamCalendarResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

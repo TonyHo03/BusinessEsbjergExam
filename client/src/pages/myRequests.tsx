@@ -1,6 +1,6 @@
 ﻿import {useEffect, useState} from "react";
 import {api} from "@/api/client.ts";
-import {type RequestDto} from "@/api/Api.ts";
+import {type RequestDto, type TransferDto} from "@/api/Api.ts";
 import {useAuth} from "@/components/authProvider.tsx";
 import {accountLabel, formatDate, formatDateRange, formatHours} from "@/lib/format.ts";
 import {Label} from "@/components/ui/label.tsx";
@@ -29,6 +29,7 @@ const buttonStyle =
 export function MyRequestsView() {
     const {user} = useAuth();
     const [requests, setRequests] = useState<RequestDto[]>([]);
+    const [transfers, setTransfers] = useState<TransferDto[]>([]);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const isAccounting = user?.role === "Accountant" || user?.role === "Admin";
@@ -39,6 +40,9 @@ export function MyRequestsView() {
         api.employees.requestsGetForEmployee({employeeId: user.id})
             .then(setRequests)
             .catch(() => setError("Could not load your requests."));
+        api.employees.transfersGetForEmployee({employeeId: user.id})
+            .then(setTransfers)
+            .catch(() => setTransfers([]));
     };
 
     useEffect(load, [user?.id]);
@@ -164,6 +168,44 @@ export function MyRequestsView() {
                     </TableBody>
                 </Table>
             </div>
+
+            {transfers.length > 0 && (
+                <div className="flex flex-col gap-4 mt-4">
+                    <Label className="text-[#0F2338] text-xl font-normal">Transfers to the next holiday year</Label>
+                    <div className="border rounded-xl bg-card">
+                        <Table>
+                            <TableHeader className="bg-muted! rounded-t-xl overflow-hidden!">
+                                <TableRow>
+                                    <TableHead>From period</TableHead>
+                                    <TableHead>Days</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Submitted</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className="[&_td]:py-4 [&_td]:text-[#023459]">
+                                {transfers.map(t => (
+                                    <TableRow key={t.id}>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">Weeks 1–5 earned {t.fromEarningYear}</span>
+                                                {t.comment && <span className="text-xs text-muted-foreground">{t.comment}</span>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{t.days?.toLocaleString("da-DK")} days</TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <Badge className={statusStyles[t.status!]}>{statusLabels[t.status!] ?? t.status}</Badge>
+                                                {t.rejectionReason && <span className="text-xs text-[#B5583B] whitespace-normal">“{t.rejectionReason}”</span>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{formatDate(t.createdAt!)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

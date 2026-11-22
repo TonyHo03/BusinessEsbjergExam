@@ -12,6 +12,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {Badge} from "@/components/ui/badge.tsx";
 import {Card, CardContent} from "@/components/ui/card.tsx";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table.tsx";
+import {TransferDialog} from "@/components/TransferDialog.tsx";
 
 const toIso = (d: Date) => d.toLocaleDateString("sv-SE"); // YYYY-MM-DD i lokal tid
 const today = () => toIso(new Date());
@@ -41,6 +42,8 @@ export function DashboardView() {
     const [balances, setBalances] = useState<BalancesResponse | null>(null);
     const [balanceError, setBalanceError] = useState<string | null>(null);
     const [team, setTeam] = useState<TeamCalendarResponse | null>(null);
+    const [transferFrom, setTransferFrom] = useState<{year: number, days: number} | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -85,16 +88,28 @@ export function DashboardView() {
                 <p role="alert" className="rounded-lg border border-[#CE6B4C] bg-[#CE6B4C]/10 px-4 py-3 text-sm text-[#B5583B]">{balanceError}</p>
             )}
 
+            {notice && (
+                <p role="status" className="rounded-lg border border-success-fg/30 bg-success-bg px-4 py-3 text-sm text-success-fg">{notice}</p>
+            )}
+
             {needsAction.length > 0 && (
                 <div role="status" className="flex items-start gap-3 rounded-lg border border-[#CE6B4C] bg-[#CE6B4C]/10 px-4 py-3 text-sm text-[#B5583B]">
                     <AlertTriangle className="size-5 shrink-0"/>
                     <div>
                         {needsAction.map(p => (
-                            <div key={`${p.account}-${p.earningYear}`}>
-                                <strong>{hours(p.remaining)}</strong> ({p.remainingDays?.toLocaleString("da-DK")} days) {p.status === "Expired" ? "expired" : "expire"} on {formatDate(p.expiresOn!)}.
+                            <div key={`${p.account}-${p.earningYear}`} className="flex items-center gap-3">
+                                <span>
+                                    <strong>{hours(p.remaining)}</strong> ({p.remainingDays?.toLocaleString("da-DK")} days) {p.status === "Expired" ? "expired" : "expire"} on {formatDate(p.expiresOn!)}.
+                                </span>
+                                {p.account === "Weeks1To5" && p.status === "ExpiringSoon" && (
+                                    <button type="button" onClick={() => setTransferFrom({year: p.earningYear!, days: p.remainingDays ?? 0})}
+                                            className="inline-flex h-8 items-center rounded-lg border border-[#CE6B4C] bg-card px-3 text-xs font-medium text-[#B5583B] hover:bg-[#CE6B4C]/10">
+                                        Request transfer
+                                    </button>
+                                )}
                             </div>
                         ))}
-                        <div>Take the holiday before then, or ask accounting about a transfer.</div>
+                        <div>Take the holiday before then, or request a transfer of up to 5 days to the next holiday year.</div>
                     </div>
                 </div>
             )}
@@ -167,6 +182,12 @@ export function DashboardView() {
             )}
 
             <TeamCalendar team={team} from={asOf}/>
+
+            {user?.id && (
+                <TransferDialog employeeId={user.id} earningYear={transferFrom?.year ?? null} remainingDays={transferFrom?.days ?? 0}
+                                onClose={() => setTransferFrom(null)}
+                                onSent={() => setNotice("Your transfer request has been sent to accounting. You can follow it under My requests.")}/>
+            )}
         </div>
     );
 }

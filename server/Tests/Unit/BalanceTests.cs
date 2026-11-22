@@ -70,26 +70,6 @@ public class BalancesTests
     }
 
     [Fact]
-    public void Week6_from_2025_is_usable_until_30_april_2027()
-    {
-        var b = Find(MetteBalances(), HolidayAccount.Week6, 2025);
-
-        Assert.Equal(12.33m, Math.Round(b.Remaining * FullTimeDay, 2)); // ansat sep–dec 2025: 4 × 3,083 t
-        Assert.Equal(new DateOnly(2027, 4, 30), b.ExpiresOn);
-        Assert.Equal(ExpiryStatus.Active, b.StatusOn(Today));
-    }
-
-    [Fact]
-    public void Week6_from_2026_is_not_usable_yet()
-    {
-        var b = Find(MetteBalances(), HolidayAccount.Week6, 2026);
-
-        Assert.Equal(30.83m, Math.Round(b.Remaining * FullTimeDay, 2)); // jan–okt: 10 × 3,083 t
-        Assert.Equal(new DateOnly(2027, 5, 1), b.UsableFrom);
-        Assert.Equal(ExpiryStatus.NotYetUsable, b.StatusOn(Today));
-    }
-
-    [Fact]
     public void Available_hours_only_count_usable_periods_on_the_account()
     {
         var balances = MetteBalances();

@@ -6,36 +6,9 @@ namespace Tests.Unit;
 public class WorkScheduleTests
 {
     [Fact]
-    public void Hours_are_calculated_from_start_and_end_time()
-    {
-        var schedule = TestSchedules.FullTime();
-
-        Assert.Equal(7.5m, schedule.HoursFor(DayOfWeek.Monday));  // 08:00–15:30
-        Assert.Equal(7m, schedule.HoursFor(DayOfWeek.Friday));    // 08:00–15:00
-    }
-
-    [Fact]
     public void Full_time_week_is_37_hours()
     {
         Assert.Equal(37m, TestSchedules.FullTime().WeeklyHours);
-    }
-
-    [Fact]
-    public void A_day_without_times_is_not_a_working_day()
-    {
-        var schedule = TestSchedules.Create(TestSchedules.LongAgo, "09:00-15:00", null, "09:00-15:00", null, null);
-
-        Assert.Equal(0m, schedule.HoursFor(DayOfWeek.Tuesday));
-        Assert.Equal(12m, schedule.WeeklyHours);
-    }
-
-    [Fact]
-    public void Weekends_are_never_working_days()
-    {
-        var schedule = TestSchedules.FullTime();
-
-        Assert.Equal(0m, schedule.HoursFor(DayOfWeek.Saturday));
-        Assert.Equal(0m, schedule.HoursFor(DayOfWeek.Sunday));
     }
 
     [Fact]

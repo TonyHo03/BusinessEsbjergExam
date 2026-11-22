@@ -17,10 +17,6 @@ public class RequestValidatorTests
         new RuleParameter { Key = ParameterKeys.NoticeOtherMonths, Value = "1", EffectiveFrom = new DateOnly(2020, 1, 1) }
     ]);
 
-    /// <summary>
-    /// Saldoen set fra ansøgningens startdato. Standard er Mette: 104,49 t til rådighed,
-    /// må låne 1 uge (37 t) og har rigeligt den 31. august.
-    /// </summary>
     private static BalanceOutlook Outlook(decimal available = 104.49m, decimal atYearEnd = 300m, decimal debtLimit = 37m) =>
         new(available, debtLimit, new DateOnly(2027, 8, 31), atYearEnd);
 
@@ -93,17 +89,6 @@ public class RequestValidatorTests
     }
 
     [Fact]
-    public void More_than_one_week_of_holiday_debt_is_rejected()
-    {
-        // 3 uger = 111 t. Har 60 t + 37 t lån = 97 t
-        var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 14), new DateOnly(2027, 1, 1),
-            Outlook(available: 60m));
-
-        Assert.False(v.IsValid);
-        Assert.True(Has(v, IssueCode.InsufficientBalance));
-    }
-
-    [Fact]
     public void No_debt_warning_when_the_balance_covers_the_request()
     {
         var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23),
@@ -159,7 +144,29 @@ public class RequestValidatorTests
 
         Assert.True(Has(v, IssueCode.StartInPast));
     }
+    [Fact]
+    public void Overlapping_an_existing_request_is_rejected()
+    {
+        // Juleferien 15.–23.12 overlapper en ansøgning 21.–22.12
+        var calc = Calc(new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23));
+        HolidayPeriod[] existing = [new(new DateOnly(2026, 12, 21), new DateOnly(2026, 12, 22))];
 
+        var v = RequestValidator.Validate(HolidayAccount.Weeks1To5, calc, Outlook(), Parameters, Today, existing);
+
+        Assert.False(v.IsValid);
+        Assert.True(Has(v, IssueCode.OverlapsExistingRequest));
+    }
+
+    [Fact]
+    public void A_request_right_after_an_existing_one_is_allowed()
+    {
+        var calc = Calc(new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23));
+        HolidayPeriod[] existing = [new(new DateOnly(2026, 12, 7), new DateOnly(2026, 12, 14))];
+
+        var v = RequestValidator.Validate(HolidayAccount.Weeks1To5, calc, Outlook(), Parameters, Today, existing);
+
+        Assert.False(Has(v, IssueCode.OverlapsExistingRequest));
+    }
     [Fact]
     public void Short_blocks_give_a_warning_but_are_still_valid()
     {
@@ -172,10 +179,11 @@ public class RequestValidatorTests
     [Fact]
     public void All_problems_are_reported_at_once()
     {
-        // For kort varsel og for mange timer (3 uger = 111 t, har 60 + 37)
+        // For kort varsel og mere end én uges feriegæld (3 uger = 111 t, har 60 + 37)
         var v = Validate(HolidayAccount.Weeks1To5, new DateOnly(2026, 11, 16), new DateOnly(2026, 12, 4),
             Outlook(available: 60m));
 
+        Assert.False(v.IsValid);
         Assert.True(Has(v, IssueCode.NotEnoughNotice));
         Assert.True(Has(v, IssueCode.InsufficientBalance));
     }

@@ -5,7 +5,6 @@ using LinqToDB.Async;
 
 namespace Service;
 
-/// <param name="FromEarningYear">Uge 1–5-perioden dagene flyttes fra, fx 2025 (udløber 31.12.2026).</param>
 public record TransferInput(
     Guid EmployeeId,
     int FromEarningYear,
@@ -22,11 +21,20 @@ public record TransferDto(
     string? RejectionReason,
     DateTimeOffset CreatedAt);
 
+// En overførsel, der venter på bogholderiet, med medarbejderens navn
+public record PendingTransferDto(
+    Guid Id,
+    Guid EmployeeId,
+    string EmployeeName,
+    int FromEarningYear,
+    decimal Days,
+    string? Comment,
+    DateTimeOffset CreatedAt);
+
 public record TransferResult(IReadOnlyList<string> Errors, TransferDto? Created);
 
 public record TransferDecision(DecisionOutcome Outcome, TransferDto? Transfer = null, string? Error = null);
 
-/// <summary>Overførsel af ferie: anmod, vis, og godkend eller afvis (bogholderiet).</summary>
 public class TransferService(AppDb db)
 {
     public async Task<TransferResult?> CreateAsync(TransferInput input, DateOnly today)
@@ -62,18 +70,14 @@ public class TransferService(AppDb db)
         .Select(ToDto)
         .ToList();
 
-    public async Task<IReadOnlyList<TransferDto>> ListPendingAsync() =>
-        (await db.TransferRequests
-            .Where(t => t.Status == RequestStatus.Pending)
-            .OrderBy(t => t.CreatedAt)
-            .ToListAsync())
-        .Select(ToDto)
-        .ToList();
+    public async Task<IReadOnlyList<PendingTransferDto>> ListPendingAsync() =>
+        await (from t in db.TransferRequests
+                join e in db.Employees on t.EmployeeId equals e.Id
+                where t.Status == RequestStatus.Pending
+                orderby t.CreatedAt
+                select new PendingTransferDto(t.Id, t.EmployeeId, e.Name, t.FromEarningYear, t.Days, t.Comment, t.CreatedAt))
+            .ToListAsync();
 
-    /// <summary>
-    /// Godkender eller afviser en ventende overførsel. Ved godkendelse tjekkes reglerne igen,
-    /// fordi saldoen kan have ændret sig, og dagene flyttes i ledgeren i samme transaktion.
-    /// </summary>
     public async Task<TransferDecision> DecideAsync(Guid id, bool approve, string? reason, Guid actorId, DateOnly today)
     {
         var transfer = await db.TransferRequests.FirstOrDefaultAsync(t => t.Id == id);
@@ -81,10 +85,10 @@ public class TransferService(AppDb db)
             return new TransferDecision(DecisionOutcome.NotFound);
 
         if (transfer.Status != RequestStatus.Pending)
-            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "Overførslen er allerede behandlet.");
+            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "This transfer has already been decided.");
 
         if (!approve && string.IsNullOrWhiteSpace(reason))
-            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "Angiv en begrundelse for afvisningen.");
+            return new TransferDecision(DecisionOutcome.NotAllowed, Error: "Add a reason for rejecting.");
 
         var entries = new List<LedgerEntry>();
 
@@ -115,7 +119,7 @@ public class TransferService(AppDb db)
         if (updated != 1)
         {
             transaction.Rollback();
-            return new TransferDecision(DecisionOutcome.Conflict, Error: "Overførslen er ændret af en anden. Opdater og prøv igen.");
+            return new TransferDecision(DecisionOutcome.Conflict, Error: "This transfer was changed by someone else. Refresh and try again.");
         }
 
         foreach (var entry in entries)
@@ -128,7 +132,6 @@ public class TransferService(AppDb db)
         return new TransferDecision(DecisionOutcome.Done, ToDto(transfer));
     }
 
-    /// <summary>Fejl efter reglerne i TransferRules. Null betyder, at medarbejderen ikke findes.</summary>
     private async Task<IReadOnlyList<string>?> ValidateAsync(
         Guid employeeId, int fromEarningYear, decimal days, DateOnly today, Guid? excludeId)
     {

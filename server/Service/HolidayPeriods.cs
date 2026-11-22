@@ -2,12 +2,6 @@ using Infra;
 
 namespace Service;
 
-/// <summary>
-/// Optjenings- og afholdelsesperioder for de to konti.
-/// En periode identificeres af sit optjeningsår (EarningYear):
-///   Uge 1–5, år 2025:   optjent 1.9.2025–31.8.2026, kan bruges 1.9.2025–31.12.2026
-///   6. ferieuge, år 2025: optjent 1.1.2025–31.12.2025, kan bruges 1.5.2026–30.4.2027
-/// </summary>
 public static class HolidayPeriods
 {
     public static int EarningYearFor(HolidayAccount account, DateOnly date) => account switch
@@ -38,7 +32,6 @@ public static class HolidayPeriods
         _ => throw new ArgumentOutOfRangeException(nameof(account))
     };
 
-    /// <summary>Sidste dag timerne kan bruges (udløbsdatoen).</summary>
     public static DateOnly UsageEnd(HolidayAccount account, int earningYear) => account switch
     {
         HolidayAccount.Weeks1To5 => new DateOnly(earningYear + 1, 12, 31),

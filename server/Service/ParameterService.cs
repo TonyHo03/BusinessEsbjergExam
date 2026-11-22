@@ -8,8 +8,6 @@ public enum ParameterVersionStatus { Past, Current, Upcoming }
 
 public record ParameterVersionDto(Guid Id, string Value, DateOnly EffectiveFrom, ParameterVersionStatus Status);
 
-/// <param name="CurrentValue">Værdien, der gælder på AsOf. Null, hvis ingen værdi gælder endnu.</param>
-/// <param name="Versions">Alle værdier, nyeste først.</param>
 public record ParameterDto(
     string Key,
     string Description,
@@ -22,7 +20,6 @@ public record ParameterInput(string Key, string Value, DateOnly EffectiveFrom);
 
 public record ParameterResult(IReadOnlyList<string> Errors, ParameterVersionDto? Created);
 
-/// <summary>Regelparametre med historik. Ændringer tilføjes som nye værdier med en startdato og overskriver aldrig de gamle.</summary>
 public class ParameterService(AppDb db)
 {
     public async Task<IReadOnlyList<ParameterDto>> GetAsync(DateOnly asOf)
@@ -75,7 +72,6 @@ public class ParameterService(AppDb db)
         return new ParameterResult([], new ParameterVersionDto(parameter.Id, parameter.Value, parameter.EffectiveFrom, status));
     }
 
-    /// <returns>Null hvis slettet, ellers en fejlbesked. KeyNotFoundException hvis den ikke findes.</returns>
     public async Task<string?> DeleteAsync(Guid id, DateOnly today)
     {
         var parameter = await db.RuleParameters.FirstOrDefaultAsync(p => p.Id == id)

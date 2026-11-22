@@ -33,13 +33,8 @@ public record RequestDto(
 
 public record SubmitResult(RequestPreview Preview, RequestDto? Created);
 
-/// <summary>
-/// Ferieansøgninger: beregn og valider (preview), gem (submit) og vis.
-/// Al validering sker her på serveren, uanset hvad klienten har tjekket.
-/// </summary>
 public class RequestService(AppDb db)
 {
-    /// <summary>Beregner og validerer uden at gemme. Null hvis medarbejderen ikke findes.</summary>
     public async Task<RequestPreview?> PreviewAsync(RequestInput input, DateOnly today)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == input.EmployeeId);
@@ -61,10 +56,20 @@ public class RequestService(AppDb db)
                         && r.Account == input.Account
                         && r.Status == RequestStatus.Pending)
             .SumAsync(r => (decimal?)r.Hours) ?? 0m; // SUM giver NULL, når der ingen rækker er
+        
+        // Ansøgninger, der stadig gælder, og som rammer de samme dage (begge konti)
+        var existing = await db.HolidayRequests
+            .Where(r => r.EmployeeId == employee.Id
+                        && (r.Status == RequestStatus.Pending
+                            || r.Status == RequestStatus.Approved
+                            || r.Status == RequestStatus.CancellationRequested)
+                        && r.StartDate <= input.EndDate && r.EndDate >= input.StartDate)
+            .Select(r => new HolidayPeriod(r.StartDate, r.EndDate))
+            .ToListAsync();
 
         var calc = RequestCalculator.Calculate(input.StartDate, input.EndDate, schedules, daysOff.ToHashSet());
         var outlook = Balances.Outlook(employee, schedules, parameters, entries, input.Account, input.StartDate, reservedHours);
-        var validation = RequestValidator.Validate(input.Account, calc, outlook, parameters, today);
+        var validation = RequestValidator.Validate(input.Account, calc, outlook, parameters, today, existing);
 
         return new RequestPreview(
             calc.Days,
@@ -75,7 +80,6 @@ public class RequestService(AppDb db)
             validation.Issues);
     }
 
-    /// <summary>Gemmer ansøgningen som Pending, hvis den er gyldig. Null hvis medarbejderen ikke findes.</summary>
     public async Task<SubmitResult?> SubmitAsync(RequestInput input, DateOnly today)
     {
         var preview = await PreviewAsync(input, today);

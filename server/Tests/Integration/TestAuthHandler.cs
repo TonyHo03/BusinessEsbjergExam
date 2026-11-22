@@ -6,13 +6,6 @@ using Microsoft.Extensions.Options;
 
 namespace Tests.Integration;
 
-/// <summary>
-/// Logger testene ind uden JWT. Som standard er man Admin med Mettes id, så testene kan ramme alle endpoints.
-/// En test kan skifte bruger med headers:
-///   X-Test-Role: Employee / Accountant / Admin
-///   X-Test-User: medarbejderens id
-///   X-Test-Anonymous: true  (ikke logget ind)
-/// </summary>
 public class TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {

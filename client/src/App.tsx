@@ -10,10 +10,11 @@ import {RequireAuth} from "./components/requireAuth.tsx";
 import RequireRole from "./components/RequireRole.tsx";
 import {Roles} from "@/api/Api.ts";
 import {RequestHolidayView} from "./pages/requestHoliday.tsx";
-import {ParametersView} from "./pages/parameters.tsx";
-import {EmployeeOverviewView} from "./pages/employeeOverview.tsx";
-import {MyRequestsView} from "./pages/myRequests.tsx";
-import {DashboardView} from "./pages/dashboard.tsx";
+import {ParametersView} from "@/pages/parameters.tsx";
+import {EmployeeOverviewView} from "@/pages/employeeOverview.tsx";
+import {MyRequestsView} from "@/pages/myRequests.tsx";
+import {DashboardView} from "@/pages/dashboard.tsx";
+import {DaysOffView} from "@/pages/daysOff.tsx";
 
 export function App() {
     return (
@@ -36,6 +37,7 @@ export function App() {
                         <Route element={<RequireRole min={Roles.Admin}/>}>
                             <Route path={routes.userManagement} element={<UserManagementView/>}/>
                             <Route path={routes.parameters} element={<ParametersView/>}/>
+                            <Route path={routes.daysOff} element={<DaysOffView/>}/>
                         </Route>
 
                         <Route path={routes.pendingApprovals} element={<PendingApprovalsPage/>}/>

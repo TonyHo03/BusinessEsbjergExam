@@ -109,7 +109,7 @@ INSERT INTO rule_parameter (key, value, effective_from) VALUES
                                                             ('main_holiday.days',          '15',    '2020-09-01'),
                                                             ('notice.main_holiday_months', '3',     '2020-09-01'),
                                                             ('notice.other_months',        '1',     '2020-09-01'),
-                                                            ('transfer.enabled',           'true',  '2020-09-01'),
+                                                            ('transfer.enabled',           'false', '2020-09-01'),
                                                             ('transfer.max_days',          '5',     '2020-09-01');
 
 -- ===== Helligdage og firmafridage 2026–2027 =====

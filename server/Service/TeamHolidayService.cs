@@ -4,7 +4,6 @@ using LinqToDB.Async;
 
 namespace Service;
 
-/// <summary>Henter data til holdkalenderen fra databasen og lader TeamCalendar regne.</summary>
 public class TeamHolidayService(AppDb db)
 {
     public async Task<TeamCalendarResponse> GetAsync(DateOnly from, DateOnly to)
