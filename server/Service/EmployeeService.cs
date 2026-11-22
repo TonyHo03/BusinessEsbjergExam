@@ -17,7 +17,7 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
         return await db.Employees.Select(e => new EmployeeDto(e)).ToListAsync();
     }
 
-    public async Task Create(CreateEmployeeRequest request)
+    public async Task<EmployeeDto> Create(CreateEmployeeRequest request)
     {
         if (await db.Employees.AnyAsync(e => e.Email == request.Email))
             throw new InvalidOperationException("A user with this email already exists.");
@@ -33,7 +33,10 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
         };
 
         await db.InsertAsync(employee);
+
+        return new EmployeeDto(employee);
     }
+
     public async Task Update(Guid id, UpdateEmployeeRequest request)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(u => u.Id == id) ?? throw new KeyNotFoundException();

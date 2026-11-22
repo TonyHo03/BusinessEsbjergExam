@@ -45,11 +45,9 @@ export function UserManagementView() {
     const [scheduleEmployee, setScheduleEmployee] = useState<EmployeeDto | null>(null);
 
 
-    useEffect(() => {
+    const loadEmployees = () => api.api.userGetAllUsers().then(setEmployees).catch(err => console.log(err));
 
-        api.api.userGetAllUsers().then(setEmployees).catch(err => console.log(err));
-
-    }, []);
+    useEffect(() => { loadEmployees(); }, []);
 
     // Søg på navn eller email (uden forskel på store og små bogstaver) og filtrér på rolle
     const term = search.trim().toLowerCase();
@@ -109,7 +107,9 @@ export function UserManagementView() {
                 </div>
             </div>
             <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing} setScheduleEmployee={setScheduleEmployee}/>
-            <CreateEmployeeDialog open={open} setOpen={setOpen}/>
+            {/* En ny medarbejder skal have et arbejdsskema, så skemadialogen åbner med det samme */}
+            <CreateEmployeeDialog open={open} setOpen={setOpen}
+                                  onCreated={created => { loadEmployees(); setScheduleEmployee(created); }}/>
             <WorkScheduleDialog employee={scheduleEmployee} onClose={() => setScheduleEmployee(null)}/>
             <UpdateEmployeeDialog open={openEditing} setOpen={setOpenEditing} editingEmployee={editingEmployee} setEditingEmployee={setEditingEmployee}/>
         </div>
@@ -203,7 +203,7 @@ function UserTable({employees, setEditingEmployee, setOpenEditing, setScheduleEm
     );
 }
 
-function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: boolean) => void}) {
+function CreateEmployeeDialog({open, setOpen, onCreated}: {open: boolean, setOpen: (open: boolean) => void, onCreated: (employee: EmployeeDto) => void}) {
 
     const [name, setName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
@@ -219,8 +219,12 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
         setSubmitting(true);
         setError(null);
         try {
-            await api.api.userCreateUser({name, email, password, role, startDate});
-            window.location.reload();
+            const created = await api.api.userCreateUser({name, email, password, role, startDate});
+            setOpen(false);
+            setName("");
+            setEmail("");
+            setPassword("");
+            onCreated(created);
         } catch (err: any) {
             // API'et sender { title: "..." } – læs den, hvis den er der
             const problem = await err?.json?.().catch(() => null);

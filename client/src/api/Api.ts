@@ -1206,11 +1206,12 @@ export class Api<
      * @request POST:/api/User
      */
     userCreateUser: (data: CreateEmployeeRequest, params: RequestParams = {}) =>
-      this.request<void, any>({
+      this.request<EmployeeDto, any>({
         path: `/api/User`,
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
