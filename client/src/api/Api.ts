@@ -23,6 +23,7 @@ export enum IssueCode {
   UsesHolidayDebt = "UsesHolidayDebt",
   NegativeOn31August = "NegativeOn31August",
   ShortBlock = "ShortBlock",
+  OverlapsExistingRequest = "OverlapsExistingRequest",
 }
 
 export enum DayKind {

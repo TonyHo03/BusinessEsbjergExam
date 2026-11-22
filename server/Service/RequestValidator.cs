@@ -19,10 +19,14 @@ public enum IssueCode
     InsufficientBalance,
     UsesHolidayDebt,
     NegativeOn31August,
-    ShortBlock
+    ShortBlock,
+    OverlapsExistingRequest
 }
 
 public record ValidationIssue(IssueCode Code, IssueSeverity Severity, string Message);
+
+// En eksisterende ansøgning, der venter eller er godkendt
+public record HolidayPeriod(DateOnly StartDate, DateOnly EndDate);
 
 public record RequestValidation(IReadOnlyList<ValidationIssue> Issues, bool IsMainHoliday)
 {
@@ -38,7 +42,8 @@ public static class RequestValidator
         RequestCalculation calc,
         BalanceOutlook outlook,
         ParameterResolver parameters,
-        DateOnly today)
+        DateOnly today,
+        IReadOnlyList<HolidayPeriod>? existing = null)
     {
         var issues = new List<ValidationIssue>();
         var start = calc.Days[0].Date;
@@ -52,6 +57,13 @@ public static class RequestValidator
 
         if (start <= today)
             issues.Add(Error(IssueCode.StartInPast, "Ferien skal starte efter i dag."));
+
+        // De samme dage må ikke søges to gange – så ville de blive trukket to gange
+        var end = calc.Days[^1].Date;
+        var overlap = existing?.FirstOrDefault(e => e.StartDate <= end && e.EndDate >= start);
+        if (overlap is not null)
+            issues.Add(Error(IssueCode.OverlapsExistingRequest,
+                $"Du har allerede ferie eller en ansøgning {overlap.StartDate:dd.MM.yyyy}–{overlap.EndDate:dd.MM.yyyy}, som overlapper."));
 
         // Varsel: 3 måneder for hovedferie, 1 måned for øvrig ferie
         var noticeMonths = parameters.GetInt(
