@@ -43,7 +43,7 @@ public class TransfersController(TransferService transfers) : ControllerBase
     }
 
     [HttpGet("api/transfers/pending"), Authorize(Policy = AccessPolicies.AccountingRights)]
-    public async Task<ActionResult<IReadOnlyList<TransferDto>>> GetPending() =>
+    public async Task<ActionResult<IReadOnlyList<PendingTransferDto>>> GetPending() =>
         Ok(await transfers.ListPendingAsync());
 
     [HttpPost("api/transfers/{id:guid}/approve"), Authorize(Policy = AccessPolicies.AccountingRights)]

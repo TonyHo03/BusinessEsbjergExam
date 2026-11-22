@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator.tsx';
 import { Card, CardContent } from '@/components/ui/card.tsx';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar.tsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.tsx';
+import { PendingTransfers } from '@/components/PendingTransfers.tsx';
 
 export function PendingApprovalsPage() {
     const { state, busyId, actionError, reload, approve, reject } = usePendingApprovals();
@@ -80,6 +81,8 @@ export function PendingApprovalsPage() {
                     </>
                 )}
             </section>
+
+            <PendingTransfers />
         </main>
     );
 }
