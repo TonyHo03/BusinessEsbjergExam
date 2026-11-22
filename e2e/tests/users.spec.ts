@@ -4,7 +4,7 @@ import {login, users} from "./helpers";
 test("admin creates an employee and is asked for a work schedule right away", async ({page}) => {
     const id = Date.now();
     const name = `E2E Employee ${id}`;
-    const email = `e2e${id}@businessesbjerg.dk`;
+    const email = `e2e${id}@businessesbjerg.com`;
 
     await login(page, users.admin);
     await page.goto("/usermanagement");

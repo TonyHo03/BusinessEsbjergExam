@@ -4,8 +4,8 @@ export const API = "http://localhost:5265";
 
 // Brugerne findes i udviklingsdatabasen: admin fra appsettings.Development.json, Mette fra init.sql
 export const users = {
-    admin: {email: "admin@example.dk", password: "admin123"},
-    mette: {email: "mette@businessesbjerg.dk", password: "mette123"},
+    admin: {email: "admin@businessesbjerg.com", password: "admin123"},
+    mette: {email: "mette@businessesbjerg.com", password: "mette123"},
 };
 
 type User = {email: string, password: string};

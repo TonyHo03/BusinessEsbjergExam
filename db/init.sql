@@ -143,7 +143,7 @@ INSERT INTO day_off (date, name, is_company) VALUES
 -- ===== Testdata: Mette fra skitsen =====
 
 INSERT INTO employee (id, name, email, password_hash, role, start_date) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Mette Jensen', 'mette@businessesbjerg.dk', '', 'Employee', '2025-09-01');
+    ('11111111-1111-1111-1111-111111111111', 'Mette Jensen', 'mette@businessesbjerg.com', '', 'Employee', '2025-09-01');
 
 INSERT INTO work_schedule (employee_id, effective_from, mon_start, mon_end, tue_start, tue_end, wed_start, wed_end, thu_start, thu_end, fri_start, fri_end) VALUES
     ('11111111-1111-1111-1111-111111111111', '2025-09-01',

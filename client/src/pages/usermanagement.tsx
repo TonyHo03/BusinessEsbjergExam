@@ -249,7 +249,7 @@ function CreateEmployeeDialog({open, setOpen, onCreated}: {open: boolean, setOpe
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <Input id="email" type="email" placeholder="name@businessesbjerg.com" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label>Role</Label>

@@ -33,7 +33,7 @@ public class DatabaseSeeder(AppDb db, PasswordHasher hasher, IConfiguration conf
         // Kun under udvikling: Mette fra init.sql får en kendt testadgangskode, så man kan logge ind som medarbejder
         if (env.IsDevelopment())
         {
-            var mette = db.Employees.FirstOrDefault(e => e.Email == "mette@businessesbjerg.dk" && e.PasswordHash == "");
+            var mette = db.Employees.FirstOrDefault(e => e.Email == "mette@businessesbjerg.com" && e.PasswordHash == "");
             if (mette is not null)
                 db.Employees.Where(e => e.Id == mette.Id).Set(e => e.PasswordHash, hasher.Hash("mette123")).Update();
         }
