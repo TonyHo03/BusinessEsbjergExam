@@ -156,6 +156,32 @@ export interface BalanceDto {
   needsAction?: boolean;
 }
 
+export interface DayOffDto {
+  /** @format guid */
+  id?: string;
+  /** @format date */
+  date?: string;
+  name?: string;
+  isCompany?: boolean;
+}
+
+export interface DayOffInput {
+  /** @format date */
+  date?: string;
+  name?: string;
+  isCompany?: boolean;
+}
+
+export interface ProblemDetails {
+  type?: string | null;
+  title?: string | null;
+  /** @format int32 */
+  status?: number | null;
+  detail?: string | null;
+  instance?: string | null;
+  [key: string]: any;
+}
+
 export interface EmployeeOverviewRow {
   /** @format guid */
   employeeId?: string;
@@ -227,16 +253,6 @@ export interface ValidationIssue {
   code?: IssueCode;
   severity?: IssueSeverity;
   message?: string;
-}
-
-export interface ProblemDetails {
-  type?: string | null;
-  title?: string | null;
-  /** @format int32 */
-  status?: number | null;
-  detail?: string | null;
-  instance?: string | null;
-  [key: string]: any;
 }
 
 export interface RequestInput {
@@ -434,6 +450,16 @@ export interface BalancesGetParams {
   asOf?: string | null;
   /** @format guid */
   employeeId: string;
+}
+
+export interface DaysOffGetParams {
+  /** @format int32 */
+  year?: number | null;
+}
+
+export interface DaysOffDeleteParams {
+  /** @format guid */
+  id: string;
 }
 
 export interface EmployeeOverviewGetParams {
@@ -929,6 +955,53 @@ export class Api<
         method: "GET",
         query: query,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DaysOff
+     * @name DaysOffGet
+     * @request GET:/api/days-off
+     */
+    daysOffGet: (query: DaysOffGetParams = {}, params: RequestParams = {}) =>
+      this.request<DayOffDto[], any>({
+        path: `/api/days-off`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DaysOff
+     * @name DaysOffAdd
+     * @request POST:/api/days-off
+     */
+    daysOffAdd: (data: DayOffInput, params: RequestParams = {}) =>
+      this.request<DayOffDto, string[]>({
+        path: `/api/days-off`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DaysOff
+     * @name DaysOffDelete
+     * @request DELETE:/api/days-off/{id}
+     */
+    daysOffDelete: ({ id }: DaysOffDeleteParams, params: RequestParams = {}) =>
+      this.request<void, ProblemDetails>({
+        path: `/api/days-off/${id}`,
+        method: "DELETE",
         ...params,
       }),
 

@@ -14,6 +14,7 @@ import {ParametersView} from "@/pages/parameters.tsx";
 import {EmployeeOverviewView} from "@/pages/employeeOverview.tsx";
 import {MyRequestsView} from "@/pages/myRequests.tsx";
 import {DashboardView} from "@/pages/dashboard.tsx";
+import {DaysOffView} from "@/pages/daysOff.tsx";
 
 export function App() {
     return (
@@ -36,13 +37,8 @@ export function App() {
                         <Route element={<RequireRole min={Roles.Admin}/>}>
                             <Route path={routes.userManagement} element={<UserManagementView/>}/>
                             <Route path={routes.parameters} element={<ParametersView/>}/>
+                            <Route path={routes.daysOff} element={<DaysOffView/>}/>
                         </Route>
-
-                        <Route path={routes.pendingApprovals} element={<PendingApprovalsPage/>}/>
-                        <Route path={routes.employeeOverview} element={<EmployeeOverviewView/>}/>
-                        <Route path={routes.userManagement} element={<UserManagementView/>}/>
-                        <Route path={routes.parameters} element={<ParametersView/>}/>
-
                     </Route>
                 </Route>
             </Routes>

@@ -13,6 +13,7 @@ import {
     SidebarSeparator,
 } from "@/components/ui/sidebar"
 import {
+    CalendarOff,
     CalendarPlus,
     CircleCheck,
     CircleHelp,
@@ -36,6 +37,7 @@ export const routes = {
     employeeOverview: "/employee-overview",
     userManagement: "/usermanagement",
     parameters: "/parameters",
+    daysOff: "/days-off",
     helpAndPolicies: "/help"
 }
 
@@ -56,7 +58,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const adminItems = [
         {title: "User Management", url: routes.userManagement, icon: <User/>},
-        {title: "Parameters", url: routes.parameters, icon: <SlidersHorizontal/>}
+        {title: "Parameters", url: routes.parameters, icon: <SlidersHorizontal/>},
+        {title: "Days off", url: routes.daysOff, icon: <CalendarOff/>}
     ]
 
     return (
