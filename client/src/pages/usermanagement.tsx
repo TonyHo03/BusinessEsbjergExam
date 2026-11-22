@@ -29,7 +29,7 @@ import {
     DialogTitle
 } from "@/components/ui/dialog.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {WorkScheduleDialog} from "@/components/WorkScheduleDialog.tsx";
+import {WorkScheduleDialog} from "../components/WorkScheduleDialog.tsx";
 
 
 export function UserManagementView() {

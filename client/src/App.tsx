@@ -10,10 +10,10 @@ import {RequireAuth} from "./components/requireAuth.tsx";
 import RequireRole from "./components/RequireRole.tsx";
 import {Roles} from "@/api/Api.ts";
 import {RequestHolidayView} from "./pages/requestHoliday.tsx";
-import {ParametersView} from "@/pages/parameters.tsx";
-import {EmployeeOverviewView} from "@/pages/employeeOverview.tsx";
-import {MyRequestsView} from "@/pages/myRequests.tsx";
-import {DashboardView} from "@/pages/dashboard.tsx";
+import {ParametersView} from "./pages/parameters.tsx";
+import {EmployeeOverviewView} from "./pages/employeeOverview.tsx";
+import {MyRequestsView} from "./pages/myRequests.tsx";
+import {DashboardView} from "./pages/dashboard.tsx";
 
 export function App() {
     return (

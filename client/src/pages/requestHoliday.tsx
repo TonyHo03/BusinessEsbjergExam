@@ -1,17 +1,17 @@
 import {Label} from "@/components/ui/label.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 import * as React from "react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Card, CardContent} from "@/components/ui/card.tsx";
-import {Calendar, CalendarDayButton, HolidayDayButton} from "../components/ui/calendar"
+import {Calendar, HolidayDayButton} from "../components/ui/calendar"
 import type {DateRange} from "react-day-picker";
 import {Badge} from "@/components/ui/badge.tsx";
-import {format} from "date-fns";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
-import {HolidayAccount} from "@/api/Api.ts";
+import {type BalancesResponse, HolidayAccount} from "@/api/Api.ts";
 import {api} from "@/api/client.ts";
-import { Input } from "@/components/ui/input";
+import {Input} from "@/components/ui/input";
 import {ArrowLeft} from "lucide-react";
+import {useAuth} from "@/components/authProvider.tsx";
 
 const locale = "en-US";
 
@@ -108,8 +108,14 @@ function HolidayCalendar({range, setRange}: {range: DateRange | undefined, setRa
 function SubmitCard({range}: {range: DateRange | undefined}) {
 
     const [account, setAccount] = useState<HolidayAccount | null>(null);
+    const [balance, setBalance] = useState<BalancesResponse | null>(null);
+    const {user} = useAuth();
 
+    useEffect(() => {
 
+        api.api.balancesGet({employeeId: user?.id!, asOf: new Date().toLocaleDateString(locale)}).then(setBalance).catch(err => console.log(err))
+
+    }, []);
 
     return (
         <Card className="min-h-0 self-start">
@@ -148,7 +154,7 @@ function SubmitCard({range}: {range: DateRange | undefined}) {
                 <div className="flex flex-col gap-4">
                     <div className="flex">
                         <p className="text-muted-foreground">Available now: </p>
-                        <p className="text-foreground font-semibold ml-auto">111 h</p>
+                        <p className="text-foreground font-semibold ml-auto">{account == HolidayAccount.Weeks1To5 ? balance?.availableWeeks1To5 : account == HolidayAccount.Week6 ? balance?.availableWeek6 : "Unknown"} h</p>
                     </div>
                     <div className="flex">
                         <p className="text-muted-foreground">This request: </p>

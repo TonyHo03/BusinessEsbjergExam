@@ -93,7 +93,7 @@ export function MyRequestsView() {
                         <p className="text-sm text-muted-foreground">Upcoming holiday</p>
                         <p className="text-3xl font-semibold text-[#023459]">{upcoming.length}</p>
                         <p className="text-xs text-muted-foreground">
-                            {upcoming.length > 0 ? `Next: ${formatDateRange(upcoming[0].startDate!, upcoming[0].endDate!)}` : "No approved holiday ahead"}
+                            {upcoming.length > 0 ? `Next: ${formatDateRange(upcoming[0]?.startDate!, upcoming[0]?.endDate!)}` : "No approved holiday ahead"}
                         </p>
                     </CardContent>
                 </Card>
