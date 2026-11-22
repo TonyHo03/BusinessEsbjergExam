@@ -15,6 +15,8 @@ import {
 } from "react-day-picker"
 
 import { Button, buttonVariants } from "@/components/ui/button"
+import type {DayOffDto, WorkSchedulesResponse} from "@/api/Api.ts";
+import {key, workdayFor} from "@/pages/requestHoliday.tsx";
 
 function Calendar({
                     className,
@@ -234,8 +236,13 @@ function CalendarDayButton({
         />
     )
 }
+type Props = React.ComponentProps<typeof DayButton> & {
+    schedule: WorkSchedulesResponse | null;
+    holidays: Map<string, DayOffDto>;
+};
 
-function HolidayDayButton({ day, modifiers, className, ...props }: React.ComponentProps<typeof DayButton>) {
+function HolidayDayButton({ day, modifiers, className, schedule, holidays, ...props }: Props) {
+
     const ref = React.useRef<HTMLButtonElement>(null);
     React.useEffect(() => {
         if (modifiers.focused) ref.current?.focus();
@@ -243,17 +250,25 @@ function HolidayDayButton({ day, modifiers, className, ...props }: React.Compone
 
     const date = day.date;
     const isHoliday = modifiers.holiday;
-    const isWeekend = modifiers.weekend;
-    const working = !isHoliday && !isWeekend;
-    const picked = working && modifiers.selected;
     const hours = date.getDay() === 5 ? "7 h" : "7.5 h";
 
-    const sub = isHoliday ? "Public holiday" : isWeekend ? "Weekend" : picked ? hours : "";
+    const off = holidays.get(key(day.date));        // the DTO, or undefined
+    const wd = workdayFor(day.date, schedule);
+    const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+    const picked = !!wd && !off && modifiers.selected;
+    const working = !isHoliday && !isWeekend;
+
+    const sub = isWeekend ? "Weekend"
+        : off ? (off.isCompany ? "Company day off" : off.name)
+            : !wd ? "Day off"
+                : picked ? `${wd.hours} h`
+                    : "";
 
     return (
         <button
             ref={ref}
             {...props}
+            title={off ? off.name : undefined}
             className={cn(
                 "flex h-full w-full flex-col items-start justify-between rounded-[10px] border p-3 text-left text-base font-medium",
                 "focus-visible:ring-2 focus-visible:ring-ring",

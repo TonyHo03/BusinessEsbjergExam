@@ -21,7 +21,7 @@ public class AuthController(EmployeeService employeeService, JwtTokenService jwt
             return BadRequest(new { error = "Username and password are required" });
 
         var user = await employeeService.Login(req.Email, req.Password);
-        if (user is null) return Unauthorized();
+        if (user is null) return NotFound();
 
         var (token, expires) = jwt.Create(user);
         HttpContext.Response.Cookies.Append(CookieName, token, new CookieOptions

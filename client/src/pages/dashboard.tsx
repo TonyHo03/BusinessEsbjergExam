@@ -12,7 +12,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {Badge} from "@/components/ui/badge.tsx";
 import {Card, CardContent} from "@/components/ui/card.tsx";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table.tsx";
-import {TransferDialog} from "@/components/TransferDialog.tsx";
+import {TransferDialog} from "../components/TransferDialog.tsx";
 
 const toIso = (d: Date) => d.toLocaleDateString("sv-SE"); // YYYY-MM-DD i lokal tid
 const today = () => toIso(new Date());
@@ -231,7 +231,7 @@ function TeamCalendar({team, from}: {team: TeamCalendarResponse | null, from: st
                             return (
                                 <th key={d.date} scope="col"
                                     className={`min-w-7 px-0.5 pb-2 font-normal text-center ${startsWeek(d.date!) ? "border-l-2 border-[#E9E1D6]" : ""}`}>
-                                    <div className="text-[10px] text-muted-foreground">{WEEKDAYS[date.getDay()][0]}</div>
+                                    <div className="text-[10px] text-muted-foreground">{WEEKDAYS[date.getDay()]![0]}</div>
                                     <div className="font-medium">{date.getDate()}</div>
                                     <div className="h-3 text-[10px] text-muted-foreground">{firstOfMonth ? MONTHS[date.getMonth()] : ""}</div>
                                 </th>
