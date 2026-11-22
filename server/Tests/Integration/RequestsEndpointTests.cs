@@ -99,4 +99,17 @@ public class RequestsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+    [Fact]
+    public async Task The_same_days_cannot_be_requested_twice()
+    {
+        var input = Week(MondayAfter(84));
+
+        var first = await _client.PostAsJsonAsync("/api/requests", input, ApiFactory.Json);
+        var second = await _client.PostAsJsonAsync("/api/requests", input, ApiFactory.Json);
+
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
+        var preview = (await second.Content.ReadFromJsonAsync<RequestPreview>(ApiFactory.Json))!;
+        Assert.Contains(preview.Issues, i => i.Code == IssueCode.OverlapsExistingRequest);
+    }
 }

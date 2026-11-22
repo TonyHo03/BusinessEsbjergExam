@@ -144,7 +144,29 @@ public class RequestValidatorTests
 
         Assert.True(Has(v, IssueCode.StartInPast));
     }
+    [Fact]
+    public void Overlapping_an_existing_request_is_rejected()
+    {
+        // Juleferien 15.–23.12 overlapper en ansøgning 21.–22.12
+        var calc = Calc(new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23));
+        HolidayPeriod[] existing = [new(new DateOnly(2026, 12, 21), new DateOnly(2026, 12, 22))];
 
+        var v = RequestValidator.Validate(HolidayAccount.Weeks1To5, calc, Outlook(), Parameters, Today, existing);
+
+        Assert.False(v.IsValid);
+        Assert.True(Has(v, IssueCode.OverlapsExistingRequest));
+    }
+
+    [Fact]
+    public void A_request_right_after_an_existing_one_is_allowed()
+    {
+        var calc = Calc(new DateOnly(2026, 12, 15), new DateOnly(2026, 12, 23));
+        HolidayPeriod[] existing = [new(new DateOnly(2026, 12, 7), new DateOnly(2026, 12, 14))];
+
+        var v = RequestValidator.Validate(HolidayAccount.Weeks1To5, calc, Outlook(), Parameters, Today, existing);
+
+        Assert.False(Has(v, IssueCode.OverlapsExistingRequest));
+    }
     [Fact]
     public void Short_blocks_give_a_warning_but_are_still_valid()
     {
