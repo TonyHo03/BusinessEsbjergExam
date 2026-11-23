@@ -20,7 +20,8 @@ public class UserController(EmployeeService service)
     public async Task<EmployeeDto> GetUserByEmail(string email) => new (await service.GetByEmail(email));
 
     [HttpPost]
-    public async Task CreateUser([FromBody] CreateEmployeeRequest request) => await service.Create(request);
+    // Returnerer den nye medarbejder, så frontend kan oprette arbejdsskemaet med det samme
+    public async Task<EmployeeDto> CreateUser([FromBody] CreateEmployeeRequest request) => await service.Create(request);
 
     [HttpPut("{id}")]
     public async Task UpdateUser(Guid id, [FromBody] UpdateEmployeeRequest request) =>

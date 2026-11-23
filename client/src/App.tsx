@@ -8,6 +8,7 @@ import {HelpPage} from "./pages/helpandpolicy.tsx";
 import {routes} from "@/components/app-sidebar.tsx";
 import {RequireAuth} from "./components/requireAuth.tsx";
 import RequireRole from "./components/RequireRole.tsx";
+import EmployeeOnly from "./components/EmployeeOnly.tsx";
 import {Roles} from "@/api/Api.ts";
 import {RequestHolidayView} from "./pages/requestHoliday.tsx";
 import {ParametersView} from "@/pages/parameters.tsx";
@@ -24,9 +25,11 @@ export function App() {
 
                 <Route element={<RequireAuth/>}>
                     <Route element={<AppLayout/>}>
-                        <Route path={routes.dashboard} element={<DashboardView/>}/>
-                        <Route path={routes.requestHolidays} element={<RequestHolidayView/>}/>
-                        <Route path={routes.myRequests} element={<MyRequestsView/>}/>
+                        <Route element={<EmployeeOnly/>}>
+                            <Route path={routes.dashboard} element={<DashboardView/>}/>
+                            <Route path={routes.requestHolidays} element={<RequestHolidayView/>}/>
+                            <Route path={routes.myRequests} element={<MyRequestsView/>}/>
+                        </Route>
                         <Route path={routes.helpAndPolicies} element={<HelpPage/>}/>
 
                         <Route element={<RequireRole min={Roles.Accountant}/>}>

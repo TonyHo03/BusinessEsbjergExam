@@ -4,7 +4,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const ACCOUNT_LABELS: Record<HolidayAccount, string> = {Weeks1To5: 'Weeks 1-5', Week6: '6th week'};
 
 export const accountLabel = (account: HolidayAccount) => ACCOUNT_LABELS[account];
-export const formatHours = (hours: number) => `${Number.isInteger(hours) ? hours : hours.toFixed(1)} h`;
+export const formatHours = (hours: number) => `${hours.toLocaleString("da-DK", {minimumFractionDigits: 2, maximumFractionDigits: 2})} h`;
 
 export const formatDays = (days: number) => `${days} ${days === 1 ? 'day' : 'days'}`;
 

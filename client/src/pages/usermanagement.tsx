@@ -45,11 +45,9 @@ export function UserManagementView() {
     const [scheduleEmployee, setScheduleEmployee] = useState<EmployeeDto | null>(null);
 
 
-    useEffect(() => {
+    const loadEmployees = () => api.api.userGetAllUsers().then(setEmployees).catch(err => console.log(err));
 
-        api.api.userGetAllUsers().then(setEmployees).catch(err => console.log(err));
-
-    }, []);
+    useEffect(() => { loadEmployees(); }, []);
 
     // Søg på navn eller email (uden forskel på store og små bogstaver) og filtrér på rolle
     const term = search.trim().toLowerCase();
@@ -109,7 +107,9 @@ export function UserManagementView() {
                 </div>
             </div>
             <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing} setScheduleEmployee={setScheduleEmployee}/>
-            <CreateEmployeeDialog open={open} setOpen={setOpen}/>
+            {/* En ny medarbejder skal have et arbejdsskema, så skemadialogen åbner med det samme. Rollekontiene har ingen ferie og intet skema */}
+            <CreateEmployeeDialog open={open} setOpen={setOpen}
+                                  onCreated={created => { loadEmployees(); if (created.role === Roles.Employee) setScheduleEmployee(created); }}/>
             <WorkScheduleDialog employee={scheduleEmployee} onClose={() => setScheduleEmployee(null)}/>
             <UpdateEmployeeDialog open={openEditing} setOpen={setOpenEditing} editingEmployee={editingEmployee} setEditingEmployee={setEditingEmployee}/>
         </div>
@@ -182,16 +182,19 @@ function UserTable({employees, setEditingEmployee, setOpenEditing, setScheduleEm
                                         <DropdownMenuItem onClick={() => {setEditingEmployee(e); setOpenEditing(true)}}>
                                             <Edit/> Edit Employee
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setScheduleEmployee(e)}>
-                                            <CalendarClock/> Work schedule
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        {e.status === Status.Active && <DropdownMenuItem onClick={() => handleDeactivate(e.id!)}>
-                                            <Ban/> Deactivate Employee
-                                        </DropdownMenuItem>}
-                                        {e.status === Status.Inactive && <DropdownMenuItem onClick={() => handleActivate(e.id!)}>
-                                            <Ban/> Activate Employee
-                                        </DropdownMenuItem>}
+                                        {/* Accountant- og system owner-kontiene har intet skema og kan ikke deaktiveres */}
+                                        {e.role === Roles.Employee && <>
+                                            <DropdownMenuItem onClick={() => setScheduleEmployee(e)}>
+                                                <CalendarClock/> Work schedule
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            {e.status === Status.Active && <DropdownMenuItem onClick={() => handleDeactivate(e.id!)}>
+                                                <Ban/> Deactivate Employee
+                                            </DropdownMenuItem>}
+                                            {e.status === Status.Inactive && <DropdownMenuItem onClick={() => handleActivate(e.id!)}>
+                                                <Ban/> Activate Employee
+                                            </DropdownMenuItem>}
+                                        </>}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
@@ -203,7 +206,7 @@ function UserTable({employees, setEditingEmployee, setOpenEditing, setScheduleEm
     );
 }
 
-function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: boolean) => void}) {
+function CreateEmployeeDialog({open, setOpen, onCreated}: {open: boolean, setOpen: (open: boolean) => void, onCreated: (employee: EmployeeDto) => void}) {
 
     const [name, setName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
@@ -219,8 +222,12 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
         setSubmitting(true);
         setError(null);
         try {
-            await api.api.userCreateUser({name, email, password, role, startDate});
-            window.location.reload();
+            const created = await api.api.userCreateUser({name, email, password, role, startDate});
+            setOpen(false);
+            setName("");
+            setEmail("");
+            setPassword("");
+            onCreated(created);
         } catch (err: any) {
             // API'et sender { title: "..." } – læs den, hvis den er der
             const problem = await err?.json?.().catch(() => null);
@@ -245,7 +252,7 @@ function CreateEmployeeDialog({open, setOpen}: {open: boolean, setOpen: (open: b
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <Input id="email" type="email" placeholder="name@businessesbjerg.com" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="grid gap-2">
                         <Label>Role</Label>
@@ -294,8 +301,10 @@ function UpdateEmployeeDialog({open, setOpen, editingEmployee, setEditingEmploye
         try {
             await api.api.userUpdateUser({id: editingEmployee?.id!}, {name: name, email: email, role: role!});
             window.location.reload();
-        } catch {
-            setError("Could not save the changes. Try again.");
+        } catch (err: any) {
+            // Fx "There is already an accountant account."
+            const problem = await err?.json?.().catch(() => null);
+            setError(problem?.title ?? "Could not save the changes. Try again.");
         } finally {
             setSubmitting(false);
         }

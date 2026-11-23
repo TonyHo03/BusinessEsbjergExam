@@ -9,7 +9,8 @@ public class TeamHolidayService(AppDb db)
     public async Task<TeamCalendarResponse> GetAsync(DateOnly from, DateOnly to)
     {
         var employees = await db.Employees
-            .Where(e => e.StartDate <= to && (e.EndDate == null || e.EndDate >= from))
+            .Where(e => e.Role == Roles.Employee
+                        && e.StartDate <= to && (e.EndDate == null || e.EndDate >= from))
             .ToListAsync();
 
         // Ferie med en åben annulleringsanmodning er stadig godkendt, indtil bogholderiet har svaret

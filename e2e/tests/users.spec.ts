@@ -1,10 +1,10 @@
 ﻿import {expect, test} from "@playwright/test";
 import {login, users} from "./helpers";
 
-test("admin creates an employee and gives them a work schedule", async ({page}) => {
+test("admin creates an employee and is asked for a work schedule right away", async ({page}) => {
     const id = Date.now();
     const name = `E2E Employee ${id}`;
-    const email = `e2e${id}@businessesbjerg.dk`;
+    const email = `e2e${id}@businessesbjerg.com`;
 
     await login(page, users.admin);
     await page.goto("/usermanagement");
@@ -16,22 +16,21 @@ test("admin creates an employee and gives them a work schedule", async ({page}) 
     await create.getByLabel("Email", {exact: true}).fill(email);
     await create.getByLabel("Temporary password").fill("Password123");
     await create.getByRole("button", {name: "Create"}).click();
-    await expect(create).toBeHidden();
 
-    // Den nye medarbejder kan findes i listen
+    // Skemadialogen åbner af sig selv, fordi en ny medarbejder skal have et skema
+    const schedule = page.getByRole("dialog");
+    await expect(schedule).toContainText(`Work schedule – ${name}`);
+    await expect(schedule).toContainText("has no work schedule yet");
+
+    await schedule.getByRole("button", {name: "Save schedule"}).click();
+    await expect(schedule.getByText("Current")).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(schedule).toBeHidden();
+
+    // Den nye medarbejder står i listen
     await page.getByLabel("Find a user:").fill(name);
     const row = page.getByRole("row").filter({hasText: email});
     await expect(row).toContainText("Employee");
     await expect(row).toContainText("Active");
-
-    // Giv medarbejderen et arbejdsskema (standardskemaet er foreslået)
-    await row.getByRole("button", {name: `Manage ${name}`}).click();
-    await page.getByRole("menuitem", {name: "Work schedule"}).click();
-    const schedule = page.getByRole("dialog");
-    await expect(schedule).toContainText("has no work schedule yet");
-
-    await schedule.getByRole("button", {name: "Save schedule"}).click();
-
-    await expect(schedule.getByText("Current")).toBeVisible();
-    await expect(schedule).not.toContainText("has no work schedule yet");
 });

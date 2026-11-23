@@ -70,7 +70,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <p>Holiday Planner</p>
             </SidebarHeader>
             <SidebarContent className="gap-4 px-2">
-                {hasRole(user?.role, Roles.Employee) && <NavEmployee items={employeeItems}/>}
+                {/* Accountant- og system owner-kontiene har ingen ferie, så kun medarbejdere ser deres egne sider */}
+                {user?.role === Roles.Employee && <NavEmployee items={employeeItems}/>}
                 {hasRole(user?.role, Roles.Accountant) && <NavAccounting items={accountingItems}/>}
                 {hasRole(user?.role, Roles.Admin) && <NavAdmin items={adminItems}/>}
             </SidebarContent>

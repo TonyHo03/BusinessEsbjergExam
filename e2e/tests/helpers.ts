@@ -4,8 +4,8 @@ export const API = "http://localhost:5265";
 
 // Brugerne findes i udviklingsdatabasen: admin fra appsettings.Development.json, Mette fra init.sql
 export const users = {
-    admin: {email: "admin@example.dk", password: "admin123"},
-    mette: {email: "mette@businessesbjerg.dk", password: "mette123"},
+    admin: {email: "admin@businessesbjerg.com", password: "admin123"},
+    mette: {email: "mette@businessesbjerg.com", password: "mette123"},
 };
 
 type User = {email: string, password: string};
@@ -16,7 +16,7 @@ export async function login(page: Page, user: User) {
     await page.locator('input[type="email"]').fill(user.email);
     await page.locator('input[type="password"]').fill(user.password);
     await page.getByRole("button", {name: "Sign In"}).click();
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).not.toHaveURL(/\/login/);
 }
 
 // En tilfældig mandag 6–40 uger ude, så varslet er overholdt, og to kørsler ikke rammer samme dag
