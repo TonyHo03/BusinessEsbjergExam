@@ -107,9 +107,9 @@ export function UserManagementView() {
                 </div>
             </div>
             <UserTable employees={filtered} setEditingEmployee={setEditingEmployee} setOpenEditing={setOpenEditing} setScheduleEmployee={setScheduleEmployee}/>
-            {/* En ny medarbejder skal have et arbejdsskema, så skemadialogen åbner med det samme */}
+            {/* En ny medarbejder skal have et arbejdsskema, så skemadialogen åbner med det samme. Rollekontiene har ingen ferie og intet skema */}
             <CreateEmployeeDialog open={open} setOpen={setOpen}
-                                  onCreated={created => { loadEmployees(); setScheduleEmployee(created); }}/>
+                                  onCreated={created => { loadEmployees(); if (created.role === Roles.Employee) setScheduleEmployee(created); }}/>
             <WorkScheduleDialog employee={scheduleEmployee} onClose={() => setScheduleEmployee(null)}/>
             <UpdateEmployeeDialog open={openEditing} setOpen={setOpenEditing} editingEmployee={editingEmployee} setEditingEmployee={setEditingEmployee}/>
         </div>
@@ -182,16 +182,19 @@ function UserTable({employees, setEditingEmployee, setOpenEditing, setScheduleEm
                                         <DropdownMenuItem onClick={() => {setEditingEmployee(e); setOpenEditing(true)}}>
                                             <Edit/> Edit Employee
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setScheduleEmployee(e)}>
-                                            <CalendarClock/> Work schedule
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        {e.status === Status.Active && <DropdownMenuItem onClick={() => handleDeactivate(e.id!)}>
-                                            <Ban/> Deactivate Employee
-                                        </DropdownMenuItem>}
-                                        {e.status === Status.Inactive && <DropdownMenuItem onClick={() => handleActivate(e.id!)}>
-                                            <Ban/> Activate Employee
-                                        </DropdownMenuItem>}
+                                        {/* Accountant- og system owner-kontiene har intet skema og kan ikke deaktiveres */}
+                                        {e.role === Roles.Employee && <>
+                                            <DropdownMenuItem onClick={() => setScheduleEmployee(e)}>
+                                                <CalendarClock/> Work schedule
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            {e.status === Status.Active && <DropdownMenuItem onClick={() => handleDeactivate(e.id!)}>
+                                                <Ban/> Deactivate Employee
+                                            </DropdownMenuItem>}
+                                            {e.status === Status.Inactive && <DropdownMenuItem onClick={() => handleActivate(e.id!)}>
+                                                <Ban/> Activate Employee
+                                            </DropdownMenuItem>}
+                                        </>}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
@@ -298,8 +301,10 @@ function UpdateEmployeeDialog({open, setOpen, editingEmployee, setEditingEmploye
         try {
             await api.api.userUpdateUser({id: editingEmployee?.id!}, {name: name, email: email, role: role!});
             window.location.reload();
-        } catch {
-            setError("Could not save the changes. Try again.");
+        } catch (err: any) {
+            // Fx "There is already an accountant account."
+            const problem = await err?.json?.().catch(() => null);
+            setError(problem?.title ?? "Could not save the changes. Try again.");
         } finally {
             setSubmitting(false);
         }

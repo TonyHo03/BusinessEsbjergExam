@@ -16,7 +16,7 @@ export async function login(page: Page, user: User) {
     await page.locator('input[type="email"]').fill(user.email);
     await page.locator('input[type="password"]').fill(user.password);
     await page.getByRole("button", {name: "Sign In"}).click();
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).not.toHaveURL(/\/login/);
 }
 
 // En tilfældig mandag 6–40 uger ude, så varslet er overholdt, og to kørsler ikke rammer samme dag

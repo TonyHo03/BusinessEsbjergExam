@@ -11,6 +11,8 @@ CREATE TABLE employee (
                           created_at timestamptz NOT NULL DEFAULT now(),
                           status     text NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive'))
 );
+-- Præcis én accountant og én system owner. Databasen sikrer det, også hvis koden fejler
+CREATE UNIQUE INDEX one_account_per_role ON employee (role) WHERE role IN ('Accountant', 'Admin');
 
 
 CREATE TABLE rule_parameter (

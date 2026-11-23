@@ -28,6 +28,8 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
         if (await db.Employees.AnyAsync(e => e.Email == email))
             throw new InvalidOperationException("A user with this email already exists.");
 
+        await CheckOnlyOne(request.Role, Guid.Empty);
+
         var employee = new Employee
         {
             Name = request.Name,
@@ -47,6 +49,12 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(u => u.Id == id) ?? throw new KeyNotFoundException();
 
+        // Ellers kunne man ende uden en accountant eller system owner
+        if (employee.Role != Roles.Employee && request.Role != employee.Role)
+            throw new ValidationException("The accountant and system owner accounts cannot change role.");
+
+        await CheckOnlyOne(request.Role, employee.Id);
+
         employee.Name = request.Name;
         employee.Email = CheckEmail(request.Email);
         employee.Role = request.Role;
@@ -57,6 +65,9 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
     public async Task SetActive(Guid id, Status status)
     {
         var employee = await db.Employees.FirstOrDefaultAsync(u => u.Id == id) ?? throw new KeyNotFoundException();
+
+        if (employee.Role != Roles.Employee && status == Status.Inactive)
+            throw new ValidationException("The accountant and system owner accounts cannot be deactivated.");
 
         employee.Status = status;
 
@@ -89,5 +100,17 @@ public class EmployeeService(AppDb db, PasswordHasher hasher)
         if (trimmed.Length <= EmailDomain.Length || !trimmed.EndsWith(EmailDomain, StringComparison.OrdinalIgnoreCase))
             throw new ValidationException($"The email must end with {EmailDomain}.");
         return trimmed;
+    }
+
+    // Der må kun være én accountant-konto og én system owner-konto (afklaret 16/11)
+    private async Task CheckOnlyOne(Roles role, Guid exceptId)
+    {
+        if (role == Roles.Employee)
+            return;
+
+        if (await db.Employees.AnyAsync(e => e.Role == role && e.Id != exceptId))
+            throw new ValidationException(role == Roles.Accountant
+                ? "There is already an accountant account."
+                : "There is already a system owner account.");
     }
 }

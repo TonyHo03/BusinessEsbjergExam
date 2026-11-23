@@ -8,7 +8,8 @@ public class EmployeeOverviewService(AppDb db)
 {
     public async Task<IReadOnlyList<EmployeeOverviewRow>> GetAsync(DateOnly asOf)
     {
-        var employees = await db.Employees.OrderBy(e => e.Name).ToListAsync();
+        // Accountant- og system owner-kontiene har ingen ferie, så de er ikke med i overblikket
+        var employees = await db.Employees.Where(e => e.Role == Roles.Employee).OrderBy(e => e.Name).ToListAsync();
         var schedules = (await db.WorkSchedules.ToListAsync()).ToLookup(s => s.EmployeeId);
         var entries = (await db.LedgerEntries.ToListAsync()).ToLookup(e => e.EmployeeId);
         var pending = (await db.HolidayRequests.Where(r => r.Status == RequestStatus.Pending).ToListAsync())
